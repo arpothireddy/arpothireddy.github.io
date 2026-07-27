@@ -552,10 +552,19 @@ async function handleJdFitSubmit(){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({jd_text: jd})
     });
-    if (!res.ok) throw new Error(`status ${res.status}`);
-    const data = await res.json();
-    removeThinking(t);
-    addMsg('Avi’s Agent','agent', jdFitHtml(data));
+    if (!res.ok){
+      removeThinking(t);
+      const msg = res.status === 429
+        ? `<p>I'm getting hit with a lot of requests right now — give it a few seconds and try again.</p>`
+        : res.status === 422
+        ? `<p>That didn't go through — trim the job description down a bit and try again.</p>`
+        : FALLBACK;
+      addMsg('Avi’s Agent','agent', msg);
+    } else {
+      const data = await res.json();
+      removeThinking(t);
+      addMsg('Avi’s Agent','agent', jdFitHtml(data));
+    }
   }catch(err){
     removeThinking(t);
     addMsg('Avi’s Agent','agent', FALLBACK);
