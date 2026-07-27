@@ -176,10 +176,19 @@
     animation:shimmer 2.1s linear infinite;
   }
   @keyframes shimmer{to{background-position:-220% center}}
-  .think-dots{display:flex;gap:4px}
-  .think-dots i{width:5px;height:5px;border-radius:50%;background:var(--clay);opacity:.4;animation:bob 1.1s ease-in-out infinite}
-  .think-dots i:nth-child(2){animation-delay:.15s}
-  .think-dots i:nth-child(3){animation-delay:.3s}
+  .think-dots{position:relative;width:18px;height:18px}
+  .think-dots i{position:absolute;top:0;left:0;width:5px;height:5px;border-radius:50%;background:var(--clay);offset-path:content-box;animation:orbit 1.6s linear infinite}
+  .think-dots i:nth-child(2){animation-delay:-.4s}
+  .think-dots i:nth-child(3){animation-delay:-.8s}
+  .think-dots i:nth-child(4){animation-delay:-1.2s}
+  @keyframes orbit{from{offset-distance:0%}to{offset-distance:100%}}
+  @supports not (offset-path: content-box){
+    .think-dots{position:static;width:auto;height:auto;display:flex;gap:4px}
+    .think-dots i{position:static;opacity:.4;animation:bob 1.1s ease-in-out infinite}
+    .think-dots i:nth-child(2){animation-delay:.15s}
+    .think-dots i:nth-child(3){animation-delay:.3s}
+    .think-dots i:nth-child(4){animation-delay:.45s}
+  }
   @keyframes bob{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 
   .sys-note{
@@ -478,7 +487,7 @@ function addSys(text){
 }
 function addThinking(){
   const m=document.createElement('div'); m.className='msg agent';
-  m.innerHTML=`<div class="av">AI</div><div class="body-wrap"><div class="thinking"><span class="think-verb"></span><span class="think-dots"><i></i><i></i><i></i></span></div></div>`;
+  m.innerHTML=`<div class="av">AI</div><div class="body-wrap"><div class="thinking"><span class="think-verb"></span><span class="think-dots"><i></i><i></i><i></i><i></i></span></div></div>`;
   conv.appendChild(m); scrollDown();
   const verbEl=m.querySelector('.think-verb');
   let idx=Math.floor(Math.random()*thinkVerbs.length);
@@ -515,12 +524,21 @@ async function handleChatSubmit(){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({message: question, history})
     });
-    if (!res.ok) throw new Error(`status ${res.status}`);
-    const data = await res.json();
-    removeThinking(t);
-    addMsg('Avi’s Agent','agent', mdToHtml(data.reply));
-    history.push({role:'user', content:question}, {role:'agent', content:data.reply});
-    if (history.length > 12) history = history.slice(-12);
+    if (!res.ok){
+      removeThinking(t);
+      const msg = res.status === 429
+        ? `<p>I'm getting hit with a lot of requests right now — give it a few seconds and try again.</p>`
+        : res.status === 422
+        ? `<p>That message is a bit too long — trim it down and resend.</p>`
+        : FALLBACK;
+      addMsg('Avi’s Agent','agent', msg);
+    } else {
+      const data = await res.json();
+      removeThinking(t);
+      addMsg('Avi’s Agent','agent', mdToHtml(data.reply));
+      history.push({role:'user', content:question}, {role:'agent', content:data.reply});
+      if (history.length > 12) history = history.slice(-12);
+    }
   }catch(err){
     removeThinking(t);
     addMsg('Avi’s Agent','agent', FALLBACK);
