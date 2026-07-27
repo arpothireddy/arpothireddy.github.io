@@ -203,13 +203,6 @@
 
   /* composer */
   .composer{padding:14px 32px 22px;border-top:1px solid var(--line);background:var(--bg)}
-  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
-  .chip{
-    font-size:12.5px;color:var(--ink-2);background:var(--surface);
-    border:1px solid var(--line);padding:6px 12px;border-radius:999px;cursor:pointer;
-    transition:all .15s;
-  }
-  .chip:hover{border-color:var(--clay);color:var(--clay-deep);background:#fff}
   .input-row{
     display:flex;align-items:center;gap:10px;background:var(--surface);
     border:1px solid var(--line-2);border-radius:14px;padding:6px 6px 6px 16px;
@@ -397,7 +390,6 @@
         <button class="mode-btn active" data-mode="chat" type="button">Chat</button>
         <button class="mode-btn" data-mode="jd" type="button">JD Fit Analyzer</button>
       </div>
-      <div class="chips" id="chips"></div>
       <div class="input-row" id="chatRow">
         <input id="termInput" type="text" placeholder="Ask about experience, AI/agent work, a specific tool…" autocomplete="off">
         <button class="send" id="sendBtn" aria-label="Send">
@@ -418,14 +410,12 @@
 <script>
 const API_BASE_URL = "https://tarantula-prude-cotton.ngrok-free.dev";
 
-const suggestions = ["Tell me about Avinash","What AI / agent work has he done?","Show his experience","Does he know Kubernetes?","How do I reach him?","Why should we hire him?"];
 const thinkVerbs = ["Thinking","Pondering","Cooking","Reasoning","Percolating","Connecting the dots","Consulting the runbook","Tracing the logs","Querying the knowledge base","Warming up the agent","Mulling it over","Simmering","Untangling","Reticulating splines"];
 
 /* ══════════════════════ DOM ══════════════════════ */
 const conv = document.getElementById('conversation');
 const input = document.getElementById('termInput');
 const sendBtn = document.getElementById('sendBtn');
-const chipsEl = document.getElementById('chips');
 const jdInput = document.getElementById('jdInput');
 const jdSubmitBtn = document.getElementById('jdSubmit');
 const chatRow = document.getElementById('chatRow');
@@ -508,7 +498,6 @@ async function boot(){
   removeThinking(t);
   addMsg('Avi’s Agent','agent',
     `<p>Hey — I'm <strong>Avi's portfolio agent</strong>. Ask me anything about <strong>Avinash Reddy Pothireddy</strong>, or switch to <strong>JD Fit Analyzer</strong> to paste a job description and see how his background stacks up.</p>`);
-  renderChips();
 }
 
 async function handleChatSubmit(){
@@ -529,7 +518,7 @@ async function handleChatSubmit(){
       const msg = res.status === 429
         ? `<p>I'm getting hit with a lot of requests right now — give it a few seconds and try again.</p>`
         : res.status === 422
-        ? `<p>That message is a bit too long — trim it down and resend.</p>`
+        ? `<p>That didn't go through — if your message is very long, trim it down; otherwise refresh the page to start a fresh conversation and try again.</p>`
         : FALLBACK;
       addMsg('Avi’s Agent','agent', msg);
     } else {
@@ -575,15 +564,6 @@ async function handleJdFitSubmit(){
   jdInput.focus();
 }
 
-function renderChips(){
-  chipsEl.innerHTML='';
-  suggestions.forEach(s=>{
-    const c=document.createElement('button'); c.className='chip'; c.textContent=s;
-    c.addEventListener('click',()=>{ input.value=s; handleChatSubmit(); });
-    chipsEl.appendChild(c);
-  });
-}
-
 /* ══════════════════════ EVENTS ══════════════════════ */
 input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleChatSubmit(); }});
 sendBtn.addEventListener('click', handleChatSubmit);
@@ -596,7 +576,6 @@ modeToggle.addEventListener('click', e=>{
   mode = btn.dataset.mode;
   [...modeToggle.children].forEach(b => b.classList.toggle('active', b===btn));
   chatRow.style.display = mode==='chat' ? 'flex' : 'none';
-  chipsEl.style.display = mode==='chat' ? 'flex' : 'none';
   jdRow.style.display = mode==='jd' ? 'flex' : 'none';
   footHint.textContent = mode==='chat'
     ? "This agent answers from Avinash's résumé — recruiters, ask away."
