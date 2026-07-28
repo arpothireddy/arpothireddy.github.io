@@ -169,7 +169,7 @@
   /* thinking shimmer */
   .thinking{display:flex;align-items:center;gap:9px;padding:2px 0}
   .think-verb{
-    font-family:var(--serif);font-size:15px;font-style:italic;
+    font-family:var(--mono);font-size:13px;font-style:normal;letter-spacing:.01em;
     background:linear-gradient(100deg,var(--ink-3) 20%,var(--clay) 45%,var(--clay-deep) 55%,var(--ink-3) 80%);
     background-size:220% auto;-webkit-background-clip:text;background-clip:text;
     -webkit-text-fill-color:transparent;color:transparent;
@@ -485,7 +485,7 @@ function addThinking(stages){
     if(sequential){ if(idx < steps.length-1) idx++; }   // advance, hold on last stage
     else { idx=(idx+1)%steps.length; }
     verbEl.textContent=steps[idx];
-  }, sequential ? 750 : 900);
+  }, sequential ? 1400 : 900);
   return m;
 }
 function removeThinking(el){ if(el){ clearInterval(el._timer); clearInterval(el._spin); el.remove(); } }
