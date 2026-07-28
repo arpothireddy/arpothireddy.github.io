@@ -176,24 +176,11 @@
     animation:shimmer 2.1s linear infinite;
   }
   @keyframes shimmer{to{background-position:-220% center}}
-  /* four dots chasing around a square path */
-  .think-dots{position:relative;width:16px;height:16px;flex:0 0 16px}
-  .think-dots i{
-    position:absolute;top:0;left:0;
-    width:4px;height:4px;border-radius:50%;background:var(--clay);
-    animation:squarepath 1.6s linear infinite;
+  /* gcloud-style single spinner cycling frames in place */
+  .think-dots{
+    font-family:var(--mono);font-size:15px;line-height:1;
+    color:var(--clay);width:1ch;display:inline-block;text-align:center;
   }
-  .think-dots i:nth-child(2){animation-delay:-.4s}
-  .think-dots i:nth-child(3){animation-delay:-.8s}
-  .think-dots i:nth-child(4){animation-delay:-1.2s}
-  @keyframes squarepath{
-    0%   {transform:translate(0,0)}
-    25%  {transform:translate(12px,0)}
-    50%  {transform:translate(12px,12px)}
-    75%  {transform:translate(0,12px)}
-    100% {transform:translate(0,0)}
-  }
-  @keyframes bob{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 
   .sys-note{
     font-family:var(--mono);font-size:11px;color:var(--ink-3);
@@ -479,17 +466,29 @@ function addSys(text){
   m.innerHTML=`<div class="sys-note">${text}</div>`;
   conv.appendChild(m); scrollDown(); return m;
 }
-function addThinking(){
+function addThinking(stages){
   const m=document.createElement('div'); m.className='msg agent';
-  m.innerHTML=`<div class="av">AI</div><div class="body-wrap"><div class="thinking"><span class="think-verb"></span><span class="think-dots"><i></i><i></i><i></i><i></i></span></div></div>`;
+  m.innerHTML=`<div class="av">AI</div><div class="body-wrap"><div class="thinking"><span class="think-dots"></span><span class="think-verb"></span></div></div>`;
   conv.appendChild(m); scrollDown();
   const verbEl=m.querySelector('.think-verb');
-  let idx=Math.floor(Math.random()*thinkVerbs.length);
-  verbEl.textContent=thinkVerbs[idx];
-  m._timer=setInterval(()=>{ idx=(idx+1)%thinkVerbs.length; verbEl.textContent=thinkVerbs[idx]; },900);
+  const spinEl=m.querySelector('.think-dots');
+  const frames=['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
+  let f=0;
+  spinEl.textContent=frames[0];
+  m._spin=setInterval(()=>{ f=(f+1)%frames.length; spinEl.textContent=frames[f]; },80);
+  // status line: sequential stages if provided, else cycling verbs
+  const steps = (stages && stages.length) ? stages : thinkVerbs;
+  const sequential = !!(stages && stages.length);
+  let idx = sequential ? 0 : Math.floor(Math.random()*steps.length);
+  verbEl.textContent=steps[idx];
+  m._timer=setInterval(()=>{
+    if(sequential){ if(idx < steps.length-1) idx++; }   // advance, hold on last stage
+    else { idx=(idx+1)%steps.length; }
+    verbEl.textContent=steps[idx];
+  }, sequential ? 750 : 900);
   return m;
 }
-function removeThinking(el){ if(el){ clearInterval(el._timer); el.remove(); } }
+function removeThinking(el){ if(el){ clearInterval(el._timer); clearInterval(el._spin); el.remove(); } }
 
 const FALLBACK = `<p>Having trouble reaching the live agent right now — try again in a moment, or email <a href="mailto:arpothireddy@gmail.com">arpothireddy@gmail.com</a> directly.</p>`;
 
@@ -510,7 +509,7 @@ async function handleChatSubmit(){
   input.value = '';
   busy = true; sendBtn.disabled = true;
   addMsg('Visitor','visitor', esc(question));
-  const t = addThinking();
+  const t = addThinking(["Reading your question","Searching Avinash's background","Reasoning through the details","Composing a response"]);
   try{
     const res = await fetch(`${API_BASE_URL}/api/chat`, {
       method:'POST',
@@ -549,7 +548,7 @@ async function handleJdFitSubmit(){
   busy = true; jdSubmitBtn.disabled = true;
   const preview = jd.length > 220 ? jd.slice(0,220) + '…' : jd;
   addMsg('Visitor','visitor', esc(preview));
-  const t = addThinking();
+  const t = addThinking(["Parsing the job description","Extracting key requirements","Matching against Avinash's résumé","Scoring the fit","Writing up strengths & gaps"]);
   try{
     const res = await fetch(`${API_BASE_URL}/api/jd-fit`, {
       method:'POST',
