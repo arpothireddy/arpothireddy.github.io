@@ -72,6 +72,17 @@
   .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;background:var(--ok);opacity:.35;animation:ping 2s ease-out infinite}
   @keyframes ping{0%{transform:scale(.6);opacity:.5}100%{transform:scale(2.2);opacity:0}}
 
+  .book-btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:12px;padding:10px 14px;border-radius:11px;
+    background:var(--clay);color:#fff;font-size:13.5px;font-weight:600;
+    cursor:pointer;transition:background .15s,transform .1s;
+    box-shadow:0 4px 14px -6px rgba(191,92,57,.6);
+  }
+  .book-btn:hover{background:var(--clay-deep)}
+  .book-btn:active{transform:scale(.98)}
+  .book-btn svg{width:16px;height:16px}
+
   .bio{font-size:13.5px;color:var(--ink-2);line-height:1.6}
 
   .side-label{
@@ -194,6 +205,64 @@
 
   /* composer */
   .composer{padding:14px 32px 22px;border-top:1px solid var(--line);background:var(--bg)}
+
+  /* JD fit result card */
+  .fit-card{margin-top:2px}
+  .fit-gauge{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+  .fit-ring{
+    --pct:0;--ring:var(--clay);
+    position:relative;width:76px;height:76px;border-radius:50%;flex:0 0 76px;
+    background:conic-gradient(var(--ring) calc(var(--pct)*1%), #e7e2d4 0);
+    display:flex;align-items:center;justify-content:center;
+    transition:none;
+  }
+  .fit-ring::after{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--bg)}
+  .fit-ring b{position:relative;z-index:1;font-family:var(--mono);font-size:19px;font-weight:600;color:var(--ink)}
+  .fit-ring b small{font-size:11px;color:var(--ink-3);font-weight:500}
+  .fit-verdict{min-width:0}
+  .fit-verdict .lvl{font-family:var(--serif);font-size:17px;font-weight:600;line-height:1.2}
+  .fit-verdict .sum{font-size:13.5px;color:var(--ink-2);margin-top:3px;line-height:1.5}
+  .fit-cols{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+  .fit-block{border-radius:12px;padding:11px 14px}
+  .fit-block.pos{background:#eef4ea;border:1px solid #d6e6cb}
+  .fit-block.neg{background:#f7efe0;border:1px solid #ecdcc0}
+  .fit-block .hd{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  .fit-block.pos .hd{color:#5c7a3f}
+  .fit-block.neg .hd{color:#a9762b}
+  .fit-block ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+  .fit-block li{position:relative;padding-left:18px;font-size:13.5px;line-height:1.45;color:var(--ink)}
+  .fit-block.pos li::before{content:"✓";position:absolute;left:0;color:#6a9345;font-weight:700}
+  .fit-block.neg li::before{content:"→";position:absolute;left:0;color:#c58b3c;font-weight:700}
+  .fit-cta{margin-top:13px;font-size:13px;color:var(--ink-2)}
+  .fit-cta a{color:var(--clay-deep);font-weight:500;border-bottom:1px solid var(--clay)}
+
+  /* follow-up suggestion chips after an answer */
+  .followups{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 4px 43px;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
+  .followup-chip{
+    font-family:var(--sans);font-size:12.5px;color:var(--clay-deep);
+    background:var(--clay-tint);border:1px solid #ecd9cd;border-radius:999px;
+    padding:6px 13px;cursor:pointer;transition:background .15s,transform .1s;
+  }
+  .followup-chip:hover{background:#efd9cc}
+  .followup-chip:active{transform:scale(.97)}
+
+  /* recruiter JD banner in greeting */
+  .jd-banner{
+    display:flex;align-items:center;gap:14px;justify-content:space-between;
+    margin-top:12px;padding:13px 15px;border-radius:13px;
+    background:linear-gradient(135deg,#f6ede4,#f1e4d8);border:1px solid #ecdcc8;
+  }
+  .jd-banner-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .jd-banner-txt strong{font-size:14px;color:var(--ink)}
+  .jd-banner-txt span{font-size:12.5px;color:var(--ink-2);line-height:1.4}
+  .jd-banner-btn{
+    flex-shrink:0;background:var(--clay);color:#fff;border:none;cursor:pointer;
+    font-family:var(--sans);font-size:12.5px;font-weight:600;
+    padding:9px 14px;border-radius:10px;transition:background .15s,transform .1s;
+  }
+  .jd-banner-btn:hover{background:var(--clay-deep)}
+  .jd-banner-btn:active{transform:scale(.97)}
+  @media(max-width:520px){.jd-banner{flex-direction:column;align-items:stretch}.jd-banner-btn{width:100%}}
   .input-row{
     display:flex;align-items:center;gap:10px;background:var(--surface);
     border:1px solid var(--line-2);border-radius:14px;padding:6px 6px 6px 16px;
@@ -305,6 +374,10 @@
         Aubrey, Texas, USA
       </div>
       <div class="status-pill" style="margin-top:14px"><span class="dot"></span>Open to opportunities</div>
+      <a class="book-btn" id="bookBtn" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="m9 15 2 2 4-4"/></svg>
+        Book 15 min
+      </a>
     </div>
 
     <p class="bio">8+ years keeping business-critical cloud systems for top financial institutions available and fault-tolerant — now bringing AI agents and MCP into the operations loop.</p>
@@ -400,6 +473,8 @@
 
 <script>
 const API_BASE_URL = "https://avinash-agent-backend-575099013034.us-central1.run.app";
+// Booking link — replace with your Calendly/Cal.com URL. Falls back to email if left as-is.
+const BOOKING_URL = "https://cal.com/avinash-pothireddy-vfihd8/15min";
 
 const thinkVerbs = ["Thinking","Pondering","Cooking","Reasoning","Percolating","Connecting the dots","Consulting the runbook","Tracing the logs","Querying the knowledge base","Warming up the agent","Mulling it over","Simmering","Untangling","Reticulating splines"];
 
@@ -445,13 +520,25 @@ function mdToHtml(text){
 }
 
 function jdFitHtml(data){
-  const score = Math.max(0, Math.min(100, data.fit_score));
-  const strengths = data.strengths.map(s => `<li>${esc(s)}</li>`).join('');
-  const gaps = data.gaps.map(s => `<li>${esc(s)}</li>`).join('');
-  return `<div class="fit-score">Fit score: ${score}/100</div>
-    <p>${esc(data.summary)}</p>
-    <p><strong>Strengths</strong></p><ul>${strengths}</ul>
-    <p><strong>Gaps</strong></p><ul>${gaps}</ul>`;
+  const score = Math.max(0, Math.min(100, parseInt(data.fit_score,10) || 0));
+  const lvl = score>=80 ? "Strong fit" : score>=60 ? "Solid fit" : score>=40 ? "Partial fit" : "Stretch fit";
+  const ringColor = score>=80 ? "#6a9345" : score>=60 ? "var(--clay)" : score>=40 ? "#c58b3c" : "#b5673f";
+  const strengths = (data.strengths||[]).map(s => `<li>${esc(s)}</li>`).join('');
+  const gaps = (data.gaps||[]).map(s => `<li>${esc(s)}</li>`).join('');
+  return `<div class="fit-card">
+    <div class="fit-gauge">
+      <div class="fit-ring" style="--pct:${score};--ring:${ringColor}"><b>${score}<small>/100</small></b></div>
+      <div class="fit-verdict">
+        <div class="lvl">${lvl}</div>
+        <div class="sum">${esc(data.summary||'')}</div>
+      </div>
+    </div>
+    <div class="fit-cols">
+      ${strengths ? `<div class="fit-block pos"><div class="hd">Strengths</div><ul>${strengths}</ul></div>` : ''}
+      ${gaps ? `<div class="fit-block neg"><div class="hd">Gaps to discuss</div><ul>${gaps}</ul></div>` : ''}
+    </div>
+    <div class="fit-cta">Think he could be a fit? <a href="${BOOKING_URL}" target="_blank" rel="noopener">Book 15 min with Avinash →</a></div>
+  </div>`;
 }
 
 /* ══════════════════════ RENDERING ══════════════════════ */
@@ -500,7 +587,13 @@ async function boot(){
   await sleep(500);
   removeThinking(t);
   addMsg('Avi’s Agent','agent',
-    `<p>Hey — I'm <strong>Avi's portfolio agent</strong>. Ask me anything about <strong>Avinash Reddy Pothireddy</strong>, or switch to <strong>JD Fit Analyzer</strong> to paste a job description and see how his background stacks up.</p>`);
+    `<p>Hey — I'm <strong>Avi's portfolio agent</strong>. Ask me anything about <strong>Avinash Reddy Pothireddy</strong> — his experience, skills, or how he'd fit a specific role.</p>
+     <div class="jd-banner" id="jdBanner">
+       <div class="jd-banner-txt"><strong>Recruiting for a role?</strong><span>Paste the job description — I'll score the fit and break down strengths &amp; gaps.</span></div>
+       <button class="jd-banner-btn" type="button">Analyze a JD →</button>
+     </div>`);
+  const banner = document.getElementById('jdBanner');
+  if (banner) banner.querySelector('.jd-banner-btn').addEventListener('click', ()=>setMode('jd'));
 }
 
 async function handleChatSubmit(){
@@ -530,6 +623,7 @@ async function handleChatSubmit(){
       addMsg('Avi’s Agent','agent', mdToHtml(data.reply));
       history.push({role:'user', content:question}, {role:'agent', content:data.reply});
       if (history.length > 12) history = history.slice(-12);
+      showFollowups();
     }
   }catch(err){
     removeThinking(t);
@@ -582,23 +676,63 @@ sendBtn.addEventListener('click', handleChatSubmit);
 jdInput.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey) && e.key==='Enter'){ e.preventDefault(); handleJdFitSubmit(); }});
 jdSubmitBtn.addEventListener('click', handleJdFitSubmit);
 
-modeToggle.addEventListener('click', e=>{
-  const btn = e.target.closest('.mode-btn');
-  if (!btn || busy) return;
-  mode = btn.dataset.mode;
-  [...modeToggle.children].forEach(b => b.classList.toggle('active', b===btn));
+function setMode(m){
+  if (busy) return;
+  mode = m;
+  [...modeToggle.children].forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
   chatRow.style.display = mode==='chat' ? 'flex' : 'none';
   jdRow.style.display = mode==='jd' ? 'flex' : 'none';
   footHint.textContent = mode==='chat'
     ? "This agent answers from Avinash's résumé — recruiters, ask away."
     : "Paste a job description to see how Avinash's background fits.";
   (mode==='chat' ? input : jdInput).focus();
+}
+modeToggle.addEventListener('click', e=>{
+  const btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  setMode(btn.dataset.mode);
 });
 
 const sidebar=document.getElementById('sidebar');
 const overlay=document.getElementById('overlay');
 document.getElementById('burger').addEventListener('click',()=>{ sidebar.classList.add('open'); overlay.classList.add('show'); });
 overlay.addEventListener('click',()=>{ sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+
+const FOLLOWUP_POOL = [
+  "What's his AI agent work?",
+  "How does he fit a platform engineering role?",
+  "Tell me about his SRE experience",
+  "What's his experience with Kubernetes?",
+  "How does he handle incident response?",
+  "What's his cloud background (AWS/GCP)?",
+  "Why should we hire him?",
+  "What certifications does he hold?"
+];
+function showFollowups(){
+  document.querySelectorAll('.followups').forEach(el=>el.remove()); // only latest set
+  const picks = FOLLOWUP_POOL.slice().sort(()=>Math.random()-0.5).slice(0,3);
+  const wrap = document.createElement('div');
+  wrap.className = 'followups';
+  picks.forEach(q=>{
+    const b = document.createElement('button');
+    b.className = 'followup-chip'; b.type='button'; b.textContent = q;
+    b.addEventListener('click', ()=>{
+      if (busy) return;
+      document.querySelectorAll('.followups').forEach(el=>el.remove());
+      input.value = q; handleChatSubmit();
+    });
+    wrap.appendChild(b);
+  });
+  conv.appendChild(wrap); scrollDown();
+}
+
+// Booking button: use BOOKING_URL, fall back to email if left unset/placeholder.
+(function initBooking(){
+  const el = document.getElementById('bookBtn');
+  if (!el) return;
+  const valid = /^https?:\/\//.test(BOOKING_URL);
+  el.href = valid ? BOOKING_URL : 'mailto:arpothireddy@gmail.com?subject=15%20minutes%20to%20chat';
+})();
 
 window.addEventListener('DOMContentLoaded',()=>{ boot(); input.focus(); });
 </script>
