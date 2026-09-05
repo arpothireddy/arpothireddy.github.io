@@ -497,6 +497,19 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
 function scrollDown(){ conv.scrollTop = conv.scrollHeight; }
 function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
+/* Anonymous, fire-and-forget analytics ping. Never blocks the UI and
+   swallows every error — a failed/slow track call must never affect chat. */
+function track(event, meta){
+  try{
+    fetch(`${API_BASE_URL}/api/track`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(meta ? {event, meta} : {event}),
+      keepalive: true
+    }).catch(()=>{});
+  }catch(_){}
+}
+
 /* Minimal markdown → the site's existing bubble markup. Escapes first, so
    nothing the model returns can inject live HTML/script. */
 function mdToHtml(text){
@@ -621,6 +634,7 @@ async function handleChatSubmit(){
       const data = await res.json();
       removeThinking(t);
       addMsg('Avi’s Agent','agent', mdToHtml(data.reply));
+      track('chat');
       history.push({role:'user', content:question}, {role:'agent', content:data.reply});
       if (history.length > 12) history = history.slice(-12);
       showFollowups();
@@ -661,6 +675,12 @@ async function handleJdFitSubmit(){
       const data = await res.json();
       removeThinking(t);
       addMsg('Avi’s Agent','agent', jdFitHtml(data));
+      // Anonymous: only a score + a short role guess from the JD's first
+      // non-empty line. The full JD text is never sent to /api/track.
+      const firstLine = (jd.split('\n').find(l => l.trim()) || '').trim();
+      const role = firstLine ? firstLine.slice(0, 60) : 'unknown';
+      const score = Math.max(0, Math.min(100, parseInt(data.fit_score, 10) || 0));
+      track('jd_fit', {fit_score: score, role});
     }
   }catch(err){
     removeThinking(t);
@@ -732,9 +752,10 @@ function showFollowups(){
   if (!el) return;
   const valid = /^https?:\/\//.test(BOOKING_URL);
   el.href = valid ? BOOKING_URL : 'mailto:arpothireddy@gmail.com?subject=15%20minutes%20to%20chat';
+  el.addEventListener('click', ()=> track('book_click'));
 })();
 
-window.addEventListener('DOMContentLoaded',()=>{ boot(); input.focus(); });
+window.addEventListener('DOMContentLoaded',()=>{ track('visit'); boot(); input.focus(); });
 </script>
 </body>
 </html>
