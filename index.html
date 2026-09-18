@@ -342,6 +342,34 @@
   .slo-foot{font-size:12.5px;color:var(--ink-2);line-height:1.5}
   .slo-foot a{color:var(--clay-deep);font-weight:500;border-bottom:1px solid var(--clay)}
 
+  /* ─────────── Architecture diagram ─────────── */
+  .arch-card{display:flex;flex-direction:column;margin-top:2px;max-width:640px}
+  .arch-cap{font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:15px}
+  .arch-cap b{color:var(--ink);font-weight:600}
+  .arch-tier{border:1px solid var(--line);border-left:3px solid var(--clay);border-radius:12px;padding:12px 14px;background:var(--surface)}
+  .arch-tier.t2{border-left-color:var(--ok)}
+  .arch-tier.t3{border-left-color:#c58b3c}
+  .arch-th{display:flex;align-items:baseline;gap:9px;margin-bottom:9px;flex-wrap:wrap}
+  .arch-th .n{font-family:var(--mono);font-size:11px;color:#fff;background:var(--clay);border-radius:6px;padding:2px 7px;font-weight:500}
+  .arch-tier.t2 .arch-th .n{background:var(--ok)}
+  .arch-tier.t3 .arch-th .n{background:#c58b3c}
+  .arch-th .t{font-family:var(--serif);font-size:15.5px;font-weight:600;color:var(--ink)}
+  .arch-nodes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+  .arch-node{font-family:var(--mono);font-size:11.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+  .arch-node.key{background:var(--clay-tint);border-color:#ecd9cd;color:var(--clay-deep);font-weight:500}
+  .arch-fn{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .arch-fn code{font-family:var(--mono);font-size:11px;background:#f0ece1;padding:1px 5px;border-radius:5px;color:var(--clay-deep)}
+  .arch-flow{display:flex;align-items:center;gap:9px;padding:7px 0 7px 15px}
+  .arch-flow .arw{font-size:16px;color:var(--clay);line-height:1}
+  .arch-flow .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+  .arch-outs{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .arch-out{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink);line-height:1.45;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+  .arch-out .tag{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:5px;white-space:nowrap;margin-top:1px}
+  .arch-out.exec .tag{background:#eef4ea;color:#5c7a3f}
+  .arch-out.esc .tag{background:#f4e6dd;color:#bf5c39}
+  .arch-foot{font-size:12px;color:var(--ink-2);line-height:1.5;margin-top:13px}
+  .arch-foot a{color:var(--clay-deep);font-weight:500;border-bottom:1px solid var(--clay)}
+
   /* follow-up suggestion chips after an answer */
   .followups{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 4px 43px;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
   .followup-chip{
@@ -392,7 +420,7 @@
   .foot-hint{font-size:11px;color:var(--ink-3);text-align:center;margin-top:10px}
 
   /* mode toggle + JD fit panel */
-  .mode-toggle{display:flex;gap:6px;margin-bottom:12px}
+  .mode-toggle{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
   .mode-btn{
     font-size:12.5px;font-weight:500;color:var(--ink-2);background:var(--surface);
     border:1px solid var(--line);padding:7px 14px;border-radius:999px;cursor:pointer;
@@ -560,6 +588,7 @@
         <button class="mode-btn active" data-mode="chat" type="button">Chat</button>
         <button class="mode-btn" data-mode="jd" type="button">JD Fit Analyzer</button>
         <button class="mode-btn" data-mode="slo" type="button">SLO Sandbox</button>
+        <button class="mode-btn" data-mode="arch" type="button">Architecture</button>
       </div>
       <div class="input-row" id="chatRow">
         <input id="termInput" type="text" placeholder="Ask about experience, AI/agent work, a specific tool…" autocomplete="off">
@@ -625,6 +654,7 @@ const sloPresets = document.getElementById('sloPresets');
 
 let busy = false;
 let mode = 'chat';
+let archShown = false;
 let history = []; // {role:'user'|'agent', content:string}, capped to last 6 turns
 
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
@@ -987,6 +1017,62 @@ function handleSloSubmit(){
   }
 }
 
+/* ══════════════════════ ARCHITECTURE ══════════════════════ */
+/* A static, résumé-grounded system diagram: telemetry -> deterministic MCP
+   context broker -> human-approved agent loop. Vertical tiers so it stays
+   legible and never overflows on mobile. */
+function archHtml(){
+  return `<div class="arch-card">
+    <div class="arch-cap">How I wire real-time telemetry into an LLM incident-resolution loop: a deterministic <b>MCP server</b> does the SLO / burn-rate math and exposes strictly-typed tools, so the agent reasons over <b>trusted context</b> and proposes <b>human-approved</b> remediation — shrinking triage time and MTTR. Grounded in my ServiceNow MCP server, RCA-automation agent, and cross-cloud workflow agent.</div>
+
+    <div class="arch-tier t1">
+      <div class="arch-th"><span class="n">Tier 1</span><span class="t">Observability &amp; Ingestion</span></div>
+      <div class="arch-nodes">
+        <span class="arch-node">Prometheus</span><span class="arch-node">Grafana</span>
+        <span class="arch-node">Splunk</span><span class="arch-node">Datadog</span>
+        <span class="arch-node">CloudWatch</span>
+      </div>
+      <div class="arch-fn">Collects metrics, logs &amp; traces across the AWS + GCP fleet, and fires a structured alert when an SLO <b>error-budget burn rate</b> is breached.</div>
+    </div>
+    <div class="arch-flow"><span class="arw">&#8595;</span><span class="lbl">raw alert payload · metric stream</span></div>
+
+    <div class="arch-tier t2">
+      <div class="arch-th"><span class="n">Tier 2</span><span class="t">MCP Tooling &amp; Context Broker</span></div>
+      <div class="arch-nodes">
+        <span class="arch-node key">sre-toolkit MCP server</span><span class="arch-node">FastAPI · Python</span>
+        <span class="arch-node">ServiceNow · incidents / problems / changes</span>
+      </div>
+      <div class="arch-fn">The deterministic bridge between raw infra data and a non-deterministic LLM: computes SLO burn-rate math, pulls operational context, and exposes typed tools — <code>calculate_burn_rate</code>, <code>get_cluster_health</code>, <code>fetch_p99_latency</code>.</div>
+    </div>
+    <div class="arch-flow"><span class="arw">&#8595;</span><span class="lbl">typed tool call · trusted context</span></div>
+
+    <div class="arch-tier t3">
+      <div class="arch-th"><span class="n">Tier 3</span><span class="t">AI Agent Decision Loop</span></div>
+      <div class="arch-nodes">
+        <span class="arch-node">Claude API agent loop</span><span class="arch-node">RCA automation</span>
+        <span class="arch-node">Human-in-the-loop approval</span>
+      </div>
+      <div class="arch-fn">Reasons over the MCP context, runs root-cause analysis, and proposes a safe playbook. Nothing executes without a human in the loop:</div>
+      <div class="arch-outs">
+        <div class="arch-out exec"><span class="tag">Validated</span><span>An agent-checked remediation playbook (scale-out, cache flush, restart) — gated on one-click human approval.</span></div>
+        <div class="arch-out esc"><span class="tag">Escalate</span><span>A Slack / ServiceNow incident summary carrying the exact diagnosis, so on-call starts a step ahead.</span></div>
+      </div>
+    </div>
+
+    <div class="arch-foot">The MCP server here is the same pattern behind the SLO Sandbox — deterministic math, typed tools, agent on top. <a href="https://github.com/arpothireddy" target="_blank" rel="noopener">See my MCP work &#8594;</a></div>
+  </div>`;
+}
+
+function showArchitecture(){
+  if (archShown){
+    const ex = conv.querySelector('.arch-card');
+    if (ex) ex.scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
+  archShown = true;
+  addMsg('Architecture', 'agent', archHtml());
+}
+
 /* ══════════════════════ EVENTS ══════════════════════ */
 input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleChatSubmit(); }});
 sendBtn.addEventListener('click', handleChatSubmit);
@@ -1006,8 +1092,12 @@ function setMode(m){
   footHint.textContent =
       mode==='chat' ? "This agent answers from Avinash's résumé — recruiters, ask away."
     : mode==='jd'   ? "Paste a job description to see how Avinash's background fits."
-    :                 "Live SRE math — set an SLO target and window to model the error budget and burn-rate alerts.";
-  (mode==='chat' ? input : mode==='jd' ? jdInput : sloTarget).focus();
+    : mode==='slo'  ? "Live SRE math — set an SLO target and window to model the error budget and burn-rate alerts."
+    :                 "A production pattern I build — telemetry → MCP context broker → human-approved agent remediation.";
+  if (mode==='chat') input.focus();
+  else if (mode==='jd') jdInput.focus();
+  else if (mode==='slo') sloTarget.focus();
+  else if (mode==='arch') showArchitecture();
 }
 modeToggle.addEventListener('click', e=>{
   const btn = e.target.closest('.mode-btn');
