@@ -194,8 +194,8 @@
   .conversation::-webkit-scrollbar{width:9px}
   .conversation::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:9px;border:3px solid var(--bg)}
 
-  .msg{display:flex;gap:13px;max-width:760px;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
-  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .msg{display:flex;gap:13px;max-width:760px;animation:rise .5s cubic-bezier(.32,.72,0,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
   @keyframes panelIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
   .panel-in{animation:panelIn .34s cubic-bezier(.32,.72,0,1)}
   .msg .av{
@@ -377,10 +377,10 @@
   .followup-chip{
     font-family:var(--sans);font-size:12.5px;color:var(--clay-deep);
     background:var(--clay-tint);border:1px solid #ecd9cd;border-radius:999px;
-    padding:6px 13px;cursor:pointer;transition:background .15s,transform .1s;
+    padding:6px 13px;cursor:pointer;transition:background .2s,transform .22s cubic-bezier(.34,1.56,.64,1);
   }
-  .followup-chip:hover{background:#efd9cc}
-  .followup-chip:active{transform:scale(.97)}
+  .followup-chip:hover{background:#efd9cc;transform:translateY(-1px)}
+  .followup-chip:active{transform:scale(.95)}
 
   /* recruiter JD banner in greeting */
   .jd-banner{
@@ -413,23 +413,33 @@
   .send{
     width:38px;height:38px;border-radius:10px;border:none;cursor:pointer;
     background:var(--clay);display:flex;align-items:center;justify-content:center;
-    transition:background .15s,transform .1s;
+    transition:background .2s,transform .25s cubic-bezier(.34,1.56,.64,1);
   }
-  .send:hover{background:var(--clay-deep)}
-  .send:active{transform:scale(.94)}
+  .send:hover{background:var(--clay-deep);transform:translateY(-1px)}
+  .send:active{transform:scale(.9)}
   .send:disabled{background:#d8d2c4;cursor:default}
   .send svg{width:18px;height:18px;color:#fff}
   .foot-hint{font-size:11px;color:var(--ink-3);text-align:center;margin-top:10px}
 
   /* mode toggle + JD fit panel */
-  .mode-toggle{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .mode-toggle{position:relative;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
   .mode-btn{
-    white-space:nowrap;font-size:12.5px;font-weight:500;color:var(--ink-2);background:var(--surface);
+    position:relative;z-index:1;
+    white-space:nowrap;font-size:12.5px;font-weight:500;color:var(--ink-2);background:transparent;
     border:1px solid var(--line);padding:7px 14px;border-radius:999px;cursor:pointer;
-    transition:background .3s cubic-bezier(.32,.72,0,1),color .3s cubic-bezier(.32,.72,0,1),border-color .3s cubic-bezier(.32,.72,0,1),transform .12s ease;
+    transition:color .4s cubic-bezier(.32,.72,0,1),border-color .4s cubic-bezier(.32,.72,0,1),transform .16s cubic-bezier(.34,1.56,.64,1);
   }
   .mode-btn:hover{border-color:var(--clay);color:var(--clay-deep)}
-  .mode-btn.active{background:var(--clay);border-color:var(--clay);color:#fff}
+  .mode-btn:active{transform:scale(.95)}
+  .mode-btn.active{border-color:transparent;color:#fff}
+  .mode-btn.active:hover{color:#fff}
+  /* the highlight that glides between tabs (iOS segmented-control feel) */
+  .mode-ind{
+    position:absolute;left:0;top:0;width:0;height:0;border-radius:999px;
+    background:var(--clay);box-shadow:0 4px 14px -6px rgba(191,92,57,.6);
+    z-index:0;pointer-events:none;
+    transition:transform .5s cubic-bezier(.4,0,.2,1),width .5s cubic-bezier(.4,0,.2,1),height .5s cubic-bezier(.4,0,.2,1);
+  }
   .jd-row{
     display:flex;flex-direction:column;gap:10px;background:var(--surface);
     border:1px solid var(--line-2);border-radius:14px;padding:12px 14px;
@@ -485,7 +495,7 @@
     .mode-btn{font-size:11px;padding:6px 9px}
   }
   @media(prefers-reduced-motion:reduce){
-    *{animation-duration:.001s!important;scroll-behavior:auto!important}
+    *{animation-duration:.001s!important;transition-duration:.01s!important;scroll-behavior:auto!important}
     .think-verb{-webkit-text-fill-color:var(--clay-deep);color:var(--clay-deep)}
   }
 </style>
@@ -589,6 +599,7 @@
 
     <div class="composer">
       <div class="mode-toggle" id="modeToggle">
+        <span class="mode-ind" aria-hidden="true"></span>
         <button class="mode-btn active" data-mode="chat" type="button">Chat</button>
         <button class="mode-btn" data-mode="jd" type="button">JD Fit Analyzer</button>
         <button class="mode-btn" data-mode="slo" type="button">SLO Sandbox</button>
@@ -1086,6 +1097,22 @@ sloCompute.addEventListener('click', handleSloSubmit);
 sloTarget.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleSloSubmit(); }});
 sloPresets.addEventListener('click', e=>{ const b=e.target.closest('button[data-slo]'); if(!b) return; sloTarget.value=b.dataset.slo; if(b.dataset.window) sloWindow.value=b.dataset.window; handleSloSubmit(); });
 
+function positionInd(){
+  const btn = modeToggle.querySelector('.mode-btn.active');
+  const ind = modeToggle.querySelector('.mode-ind');
+  if (!btn || !ind) return;
+  ind.style.width = btn.offsetWidth + 'px';
+  ind.style.height = btn.offsetHeight + 'px';
+  ind.style.transform = `translate(${btn.offsetLeft}px, ${btn.offsetTop}px)`;
+}
+function snapInd(){
+  const ind = modeToggle.querySelector('.mode-ind'); if (!ind) return;
+  ind.style.transition = 'none';
+  positionInd();
+  requestAnimationFrame(() => requestAnimationFrame(() => { ind.style.transition = ''; }));
+}
+let _indResize;
+window.addEventListener('resize', () => { clearTimeout(_indResize); _indResize = setTimeout(snapInd, 120); });
 function animatePanel(el){
   if (!el) return;
   el.classList.remove('panel-in');
@@ -1095,7 +1122,8 @@ function animatePanel(el){
 function setMode(m){
   if (busy) return;
   mode = m;
-  [...modeToggle.children].forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
+  modeToggle.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
+  positionInd();
   chatRow.style.display = mode==='chat' ? 'flex' : 'none';
   jdRow.style.display   = mode==='jd'   ? 'flex' : 'none';
   sloRow.style.display  = mode==='slo'  ? 'flex' : 'none';
@@ -1181,7 +1209,8 @@ function showFollowups(){
   el.addEventListener('click', ()=> track('book_click'));
 })();
 
-window.addEventListener('DOMContentLoaded',()=>{ track('visit'); boot(); input.focus(); });
+window.addEventListener('DOMContentLoaded',()=>{ track('visit'); boot(); input.focus(); snapInd();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(snapInd); });
 </script>
 </body>
 </html>
