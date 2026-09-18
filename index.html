@@ -307,11 +307,14 @@
   .slo-compute:active{transform:scale(.97)}
   .slo-presets{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
   .slo-presets>span{font-size:11.5px;color:var(--ink-3);font-family:var(--mono)}
-  .slo-presets button{font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer;transition:border-color .15s,color .15s}
-  .slo-presets button:hover{border-color:var(--clay);color:var(--clay-deep)}
+  .slo-presets button{font-family:var(--sans);font-size:12px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:border-color .15s}
+  .slo-presets button:hover{border-color:var(--clay)}
+  .slo-presets button em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--clay-deep)}
 
   .slo-card{display:flex;flex-direction:column;gap:13px;margin-top:2px}
-  .slo-head{display:flex;align-items:center;gap:18px}
+  .slo-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .slo-mcpcopy{margin-left:auto;align-self:flex-start;font-family:var(--sans);font-size:11.5px;font-weight:500;color:var(--clay-deep);background:var(--clay-tint);border:1px solid #ecd9cd;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap;transition:background .15s}
+  .slo-mcpcopy:hover{background:#efd9cc}
   .slo-target{font-family:var(--mono);font-size:30px;font-weight:600;color:var(--ink);line-height:1;white-space:nowrap}
   .slo-target small{font-size:14px;color:var(--ink-3);font-weight:500;margin-left:3px}
   .slo-budget .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
@@ -586,11 +589,10 @@
           <button class="slo-compute" id="sloCompute" type="button">Compute</button>
         </div>
         <div class="slo-presets" id="sloPresets">
-          <span>Quick:</span>
-          <button type="button" data-slo="99">99%</button>
-          <button type="button" data-slo="99.9">99.9%</button>
-          <button type="button" data-slo="99.95">99.95%</button>
-          <button type="button" data-slo="99.99">99.99%</button>
+          <span>Scenarios:</span>
+          <button type="button" data-slo="99.99" data-window="30">Tier-1 payment gateway <em>99.99%</em></button>
+          <button type="button" data-slo="99.9" data-window="30">Standard API endpoint <em>99.9%</em></button>
+          <button type="button" data-slo="99" data-window="30">Internal batch pipeline <em>99.0%</em></button>
         </div>
       </div>
       <div class="foot-hint" id="footHint">This agent answers from Avinash's résumé — recruiters, ask away.</div>
@@ -739,6 +741,7 @@ async function boot(){
      </div>`);
   const banner = document.getElementById('jdBanner');
   if (banner) banner.querySelector('.jd-banner-btn').addEventListener('click', ()=>setMode('jd'));
+  showStarters();
 }
 
 async function handleChatSubmit(){
@@ -927,6 +930,7 @@ function sloCardHtml(sloPct, windowDays, c){
         <div class="v">${fmtPct(c.budget)} · <b>${fmtDur(c.allowedDowntimeMin)}</b> of downtime per ${windowDays}d</div>
         <div class="slo-eq">≈ ${fmtDur(c.perWeekMin)} / week · ${fmtDur(c.perDayMin)} / day</div>
       </div>
+      <button class="slo-mcpcopy" type="button" title="Copy the MCP tools/call payload an agent would send">&#9109; Copy MCP call</button>
     </div>
     <div class="slo-sub"><span>Multi-window burn-rate alerts</span><span class="cite">Google SRE Workbook method</span></div>
     <div class="slo-tablewrap"><table class="slo-table">
@@ -971,6 +975,16 @@ function handleSloSubmit(){
   el.querySelectorAll('.slo-copy').forEach(btn => btn.addEventListener('click', () => {
     copyText(btn.closest('.slo-pane').querySelector('pre').textContent, btn);
   }));
+  const mcpBtn = el.querySelector('.slo-mcpcopy');
+  if (mcpBtn){
+    // A valid MCP tools/call payload — inputs only; burn rate is computed by the tool.
+    const mcpCall = JSON.stringify({
+      jsonrpc: "2.0", id: 1, method: "tools/call",
+      params: { name: "evaluate_error_budget_burn",
+                arguments: { slo_target_pct: sloPct, window_days: windowDays } }
+    }, null, 2);
+    mcpBtn.addEventListener('click', () => copyText(mcpCall, mcpBtn));
+  }
 }
 
 /* ══════════════════════ EVENTS ══════════════════════ */
@@ -980,7 +994,7 @@ jdInput.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey) && e.key==='E
 jdSubmitBtn.addEventListener('click', handleJdFitSubmit);
 sloCompute.addEventListener('click', handleSloSubmit);
 sloTarget.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleSloSubmit(); }});
-sloPresets.addEventListener('click', e=>{ const b=e.target.closest('button[data-slo]'); if(!b) return; sloTarget.value=b.dataset.slo; handleSloSubmit(); });
+sloPresets.addEventListener('click', e=>{ const b=e.target.closest('button[data-slo]'); if(!b) return; sloTarget.value=b.dataset.slo; if(b.dataset.window) sloWindow.value=b.dataset.window; handleSloSubmit(); });
 
 function setMode(m){
   if (busy) return;
@@ -1016,6 +1030,27 @@ const FOLLOWUP_POOL = [
   "Why should we hire him?",
   "What certifications does he hold?"
 ];
+const STARTERS = [
+  "How does Avinash use MCP in SRE workflows?",
+  "Summarize his cloud platform experience",
+  "Walk me through his AI agent projects",
+];
+function showStarters(){
+  const wrap = document.createElement('div');
+  wrap.className = 'followups';
+  STARTERS.forEach(q=>{
+    const b = document.createElement('button');
+    b.className = 'followup-chip'; b.type='button'; b.textContent = q;
+    b.addEventListener('click', ()=>{
+      if (busy) return;
+      document.querySelectorAll('.followups').forEach(el=>el.remove());
+      input.value = q; handleChatSubmit();
+    });
+    wrap.appendChild(b);
+  });
+  conv.appendChild(wrap); scrollDown();
+}
+
 function showFollowups(){
   document.querySelectorAll('.followups').forEach(el=>el.remove()); // only latest set
   const picks = FOLLOWUP_POOL.slice().sort(()=>Math.random()-0.5).slice(0,3);
