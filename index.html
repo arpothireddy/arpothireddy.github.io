@@ -172,7 +172,7 @@
   .side-foot{font-size:11px;color:var(--ink-3);margin-top:auto;line-height:1.5}
 
   /* ─────────── Chat ─────────── */
-  .chat{display:flex;flex-direction:column;height:100vh;position:relative}
+  .chat{display:flex;flex-direction:column;height:100vh;position:relative;min-width:0}
   .chat-header{
     padding:20px 32px;border-bottom:1px solid var(--line);
     display:flex;align-items:center;gap:14px;background:var(--bg);
@@ -196,6 +196,8 @@
 
   .msg{display:flex;gap:13px;max-width:760px;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
   @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes panelIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .panel-in{animation:panelIn .34s cubic-bezier(.32,.72,0,1)}
   .msg .av{
     width:30px;height:30px;border-radius:8px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
@@ -424,7 +426,7 @@
   .mode-btn{
     font-size:12.5px;font-weight:500;color:var(--ink-2);background:var(--surface);
     border:1px solid var(--line);padding:7px 14px;border-radius:999px;cursor:pointer;
-    transition:all .15s;
+    transition:background .3s cubic-bezier(.32,.72,0,1),color .3s cubic-bezier(.32,.72,0,1),border-color .3s cubic-bezier(.32,.72,0,1),transform .12s ease;
   }
   .mode-btn:hover{border-color:var(--clay);color:var(--clay-deep)}
   .mode-btn.active{background:var(--clay);border-color:var(--clay);color:#fff}
@@ -458,7 +460,7 @@
   .mobile-bar{display:none}
   .overlay{display:none}
   @media(max-width:860px){
-    .layout{grid-template-columns:1fr}
+    .layout{grid-template-columns:minmax(0,1fr)}
     .mobile-bar{
       display:flex;align-items:center;justify-content:space-between;
       padding:12px 18px;background:var(--sidebar);border-bottom:1px solid var(--line);
@@ -476,8 +478,8 @@
     .overlay.show{display:block;position:fixed;inset:0;background:rgba(41,38,31,.4);z-index:35}
     .chat{height:calc(100vh - 49px)}
     .chat-header{padding:16px 20px}
-    .conversation{padding:22px 18px 10px}
-    .composer{padding:12px 18px 18px}
+    .conversation{padding:22px 18px 10px;min-width:0}
+    .composer{padding:12px 18px 18px;min-width:0}
     .msg{max-width:100%}
   }
   @media(prefers-reduced-motion:reduce){
@@ -1082,6 +1084,12 @@ sloCompute.addEventListener('click', handleSloSubmit);
 sloTarget.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleSloSubmit(); }});
 sloPresets.addEventListener('click', e=>{ const b=e.target.closest('button[data-slo]'); if(!b) return; sloTarget.value=b.dataset.slo; if(b.dataset.window) sloWindow.value=b.dataset.window; handleSloSubmit(); });
 
+function animatePanel(el){
+  if (!el) return;
+  el.classList.remove('panel-in');
+  void el.offsetWidth;        // force reflow so the animation re-fires
+  el.classList.add('panel-in');
+}
 function setMode(m){
   if (busy) return;
   mode = m;
@@ -1094,6 +1102,9 @@ function setMode(m){
     : mode==='jd'   ? "Paste a job description to see how Avinash's background fits."
     : mode==='slo'  ? "Live SRE math — set an SLO target and window to model the error budget and burn-rate alerts."
     :                 "A production pattern I build — telemetry → MCP context broker → human-approved agent remediation.";
+  const shown = mode==='chat' ? chatRow : mode==='jd' ? jdRow : mode==='slo' ? sloRow : null;
+  animatePanel(shown);
+  animatePanel(footHint);
   if (mode==='chat') input.focus();
   else if (mode==='jd') jdInput.focus();
   else if (mode==='slo') sloTarget.focus();
