@@ -294,6 +294,51 @@
   .fit-cta{margin-top:13px;font-size:13px;color:var(--ink-2)}
   .fit-cta a{color:var(--clay-deep);font-weight:500;border-bottom:1px solid var(--clay)}
 
+  /* ─────────── SLO Sandbox ─────────── */
+  .slo-row{display:flex;flex-direction:column;gap:11px;background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:12px 14px}
+  .slo-inputs{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+  .slo-inputs label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--ink-2);font-weight:500}
+  .slo-field{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line-2);border-radius:10px;padding:7px 11px}
+  .slo-field input{border:none;background:none;outline:none;width:76px;font-family:var(--mono);font-size:14px;color:var(--ink)}
+  .slo-field span{color:var(--ink-3);font-family:var(--mono);font-size:13px}
+  .slo-inputs select{background:var(--bg);border:1px solid var(--line-2);border-radius:10px;padding:8px 11px;font-family:var(--sans);font-size:13.5px;color:var(--ink);outline:none;cursor:pointer}
+  .slo-compute{margin-left:auto;background:var(--clay);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s}
+  .slo-compute:hover{background:var(--clay-deep)}
+  .slo-compute:active{transform:scale(.97)}
+  .slo-presets{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .slo-presets>span{font-size:11.5px;color:var(--ink-3);font-family:var(--mono)}
+  .slo-presets button{font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer;transition:border-color .15s,color .15s}
+  .slo-presets button:hover{border-color:var(--clay);color:var(--clay-deep)}
+
+  .slo-card{display:flex;flex-direction:column;gap:13px;margin-top:2px}
+  .slo-head{display:flex;align-items:center;gap:18px}
+  .slo-target{font-family:var(--mono);font-size:30px;font-weight:600;color:var(--ink);line-height:1;white-space:nowrap}
+  .slo-target small{font-size:14px;color:var(--ink-3);font-weight:500;margin-left:3px}
+  .slo-budget .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+  .slo-budget .v{font-size:14px;color:var(--ink);margin-top:3px}
+  .slo-budget .v b{font-family:var(--mono)}
+  .slo-eq{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .slo-sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:11px}
+  .slo-sub .cite{color:var(--clay-deep);letter-spacing:.02em;text-transform:none;font-family:var(--sans);font-size:11.5px}
+  .slo-tablewrap{overflow-x:auto}
+  .slo-table{width:100%;border-collapse:collapse;font-size:13px}
+  .slo-table th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:500;padding:0 12px 7px 0;white-space:nowrap}
+  .slo-table td{padding:7px 12px 7px 0;border-top:1px solid var(--line);color:var(--ink);white-space:nowrap}
+  .slo-table td b{font-family:var(--mono)}
+  .slo-sev{display:inline-block;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:5px;margin-right:6px;vertical-align:1px}
+  .slo-sev.page{background:#f4e6dd;color:#bf5c39}
+  .slo-sev.ticket{background:#eef4ea;color:#5c7a3f}
+  .slo-tabs{display:flex;gap:6px}
+  .slo-tab{font-family:var(--sans);font-size:12.5px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);padding:6px 13px;border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .slo-tab:hover{border-color:var(--clay);color:var(--clay-deep)}
+  .slo-tab.active{background:var(--clay);border-color:var(--clay);color:#fff}
+  .slo-bar{display:flex;justify-content:flex-end;margin-bottom:6px}
+  .slo-copy{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--bg);border:1px solid var(--line-2);border-radius:7px;padding:4px 11px;cursor:pointer;transition:border-color .15s,color .15s}
+  .slo-copy:hover{border-color:var(--clay);color:var(--clay-deep)}
+  .slo-code{font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 14px;overflow:auto;white-space:pre;max-height:340px}
+  .slo-foot{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .slo-foot a{color:var(--clay-deep);font-weight:500;border-bottom:1px solid var(--clay)}
+
   /* follow-up suggestion chips after an answer */
   .followups{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 4px 43px;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
   .followup-chip{
@@ -511,6 +556,7 @@
       <div class="mode-toggle" id="modeToggle">
         <button class="mode-btn active" data-mode="chat" type="button">Chat</button>
         <button class="mode-btn" data-mode="jd" type="button">JD Fit Analyzer</button>
+        <button class="mode-btn" data-mode="slo" type="button">SLO Sandbox</button>
       </div>
       <div class="input-row" id="chatRow">
         <input id="termInput" type="text" placeholder="Ask about experience, AI/agent work, a specific tool…" autocomplete="off">
@@ -522,6 +568,29 @@
         <textarea id="jdInput" placeholder="Paste a job description to see how Avinash's background fits…"></textarea>
         <div class="jd-actions">
           <button class="jd-submit" id="jdSubmit" type="button">Analyze Fit</button>
+        </div>
+      </div>
+      <div class="slo-row" id="sloRow" style="display:none">
+        <div class="slo-inputs">
+          <label>SLO target
+            <div class="slo-field"><input id="sloTarget" type="number" step="0.01" min="0" max="100" value="99.9"><span>%</span></div>
+          </label>
+          <label>Window
+            <select id="sloWindow">
+              <option value="7">7 days</option>
+              <option value="28">28 days</option>
+              <option value="30" selected>30 days</option>
+              <option value="90">90 days</option>
+            </select>
+          </label>
+          <button class="slo-compute" id="sloCompute" type="button">Compute</button>
+        </div>
+        <div class="slo-presets" id="sloPresets">
+          <span>Quick:</span>
+          <button type="button" data-slo="99">99%</button>
+          <button type="button" data-slo="99.9">99.9%</button>
+          <button type="button" data-slo="99.95">99.95%</button>
+          <button type="button" data-slo="99.99">99.99%</button>
         </div>
       </div>
       <div class="foot-hint" id="footHint">This agent answers from Avinash's résumé — recruiters, ask away.</div>
@@ -546,6 +615,11 @@ const chatRow = document.getElementById('chatRow');
 const jdRow = document.getElementById('jdRow');
 const modeToggle = document.getElementById('modeToggle');
 const footHint = document.getElementById('footHint');
+const sloRow = document.getElementById('sloRow');
+const sloTarget = document.getElementById('sloTarget');
+const sloWindow = document.getElementById('sloWindow');
+const sloCompute = document.getElementById('sloCompute');
+const sloPresets = document.getElementById('sloPresets');
 
 let busy = false;
 let mode = 'chat';
@@ -748,22 +822,178 @@ async function handleJdFitSubmit(){
   jdInput.focus();
 }
 
+/* ══════════════════════ SLO SANDBOX ══════════════════════ */
+/* Multi-window, multi-burn-rate error-budget math per the Google SRE
+   Workbook ("Alerting on SLOs"). For a 30-day window this reproduces the
+   canonical 14.4x / 6x / 1x burn rates; it scales correctly for any window. */
+function computeSLO(sloPct, windowDays){
+  const slo = sloPct / 100;
+  const budget = 1 - slo;                     // error budget (fraction)
+  const windowMin = windowDays * 24 * 60;
+  const windowH = windowDays * 24;
+  const tiers = [
+    {name:'Fast burn', sev:'page',   consumed:0.02, longLabel:'1h', shortLabel:'5m',  longH:1},
+    {name:'Slow burn', sev:'page',   consumed:0.05, longLabel:'6h', shortLabel:'30m', longH:6},
+    {name:'Ticket',    sev:'ticket', consumed:0.10, longLabel:'3d', shortLabel:'6h',  longH:72},
+  ].map(t => {
+    const burn = t.consumed * (windowH / t.longH);
+    return Object.assign({}, t, {burn, threshold: burn * budget, exhaustH: windowH / burn});
+  });
+  return {slo, budget, allowedDowntimeMin: budget * windowMin,
+          perDayMin: budget * 24 * 60, perWeekMin: budget * 7 * 24 * 60, tiers};
+}
+
+function fmtDur(min){
+  if (min < 1) return Math.round(min * 60) + ' s';
+  if (min < 60) return Number(min.toFixed(1)) + ' min';
+  if (min < 1440){ const h = Math.floor(min / 60), m = Math.round(min % 60); return m ? `${h}h ${m}m` : `${h}h`; }
+  const d = Math.floor(min / 1440), h = Math.round((min % 1440) / 60); return h ? `${d}d ${h}h` : `${d}d`;
+}
+function fmtNum(x){ return Number(x.toPrecision(4)).toString(); }
+function fmtPct(x){ return fmtNum(x * 100) + '%'; }
+
+function sloPrometheusYaml(sloPct, windowDays, c){
+  const L = [];
+  L.push(`# Multi-window, multi-burn-rate SLO alerts (Google SRE Workbook)`);
+  L.push(`# Target: ${sloPct}% over ${windowDays}d  |  error budget ${fmtPct(c.budget)} (${fmtDur(c.allowedDowntimeMin)} of downtime)`);
+  L.push(`# Substitute slo:errors:ratio_rateXX with your own error-ratio recording rules.`);
+  L.push(`groups:`);
+  L.push(`- name: slo-burn-rate`);
+  L.push(`  rules:`);
+  c.tiers.forEach(t => {
+    const thr = fmtNum(t.threshold);
+    L.push(`  - alert: ErrorBudgetBurn_${t.name.replace(/ /g, '')}`);
+    L.push(`    expr: |`);
+    L.push(`      slo:errors:ratio_rate${t.longLabel}  > ${thr}`);
+    L.push(`      and`);
+    L.push(`      slo:errors:ratio_rate${t.shortLabel} > ${thr}`);
+    L.push(`    for: ${t.sev === 'page' ? '2m' : '15m'}`);
+    L.push(`    labels:`);
+    L.push(`      severity: ${t.sev}`);
+    L.push(`    annotations:`);
+    L.push(`      summary: "${fmtNum(t.burn)}x burn: ${t.consumed * 100}% of the ${windowDays}d budget in ${t.longLabel}"`);
+  });
+  return L.join('\n');
+}
+
+function sloMcpExchange(sloPct, windowDays, c){
+  const payload = {
+    slo_target_pct: sloPct,
+    window_days: windowDays,
+    error_budget: {
+      fraction: Number(c.budget.toPrecision(4)),
+      percent: Number((c.budget * 100).toPrecision(4)),
+      allowed_downtime: { per_window: fmtDur(c.allowedDowntimeMin), per_week: fmtDur(c.perWeekMin), per_day: fmtDur(c.perDayMin) }
+    },
+    burn_rate_alerts: c.tiers.map(t => ({
+      tier: t.name, severity: t.sev, budget_consumed_pct: t.consumed * 100,
+      long_window: t.longLabel, short_window: t.shortLabel,
+      burn_rate: Number(t.burn.toPrecision(4)),
+      error_ratio_threshold: Number(t.threshold.toPrecision(4)),
+      budget_exhausted_in: fmtDur(t.exhaustH * 60)
+    }))
+  };
+  return {
+    tool: {
+      name: "evaluate_error_budget_burn",
+      description: "Compute an SLO error budget and multi-window burn-rate alert thresholds (Google SRE Workbook method).",
+      inputSchema: { type: "object", properties: {
+        slo_target_pct: { type: "number", description: "Availability target, e.g. 99.9" },
+        window_days: { type: "integer", description: "Rolling SLO window in days, e.g. 30" }
+      }, required: ["slo_target_pct", "window_days"] }
+    },
+    request: { jsonrpc: "2.0", id: 1, method: "tools/call",
+      params: { name: "evaluate_error_budget_burn", arguments: { slo_target_pct: sloPct, window_days: windowDays } } },
+    response: { jsonrpc: "2.0", id: 1, result: {
+      content: [{ type: "text", text: JSON.stringify(payload) }], structuredContent: payload, isError: false } }
+  };
+}
+
+function sloCardHtml(sloPct, windowDays, c){
+  const yaml = sloPrometheusYaml(sloPct, windowDays, c);
+  const mcp = JSON.stringify(sloMcpExchange(sloPct, windowDays, c), null, 2);
+  const rows = c.tiers.map(t => `<tr>
+        <td><span class="slo-sev ${t.sev}">${t.sev}</span>${t.name}</td>
+        <td>${t.longLabel} / ${t.shortLabel}</td>
+        <td><b>${fmtNum(t.burn)}×</b></td>
+        <td>${fmtPct(t.threshold)}</td>
+        <td>${fmtDur(t.exhaustH * 60)}</td>
+      </tr>`).join('');
+  return `<div class="slo-card">
+    <div class="slo-head">
+      <div class="slo-target">${sloPct}%<small>/ ${windowDays}d</small></div>
+      <div class="slo-budget">
+        <div class="k">Error budget</div>
+        <div class="v">${fmtPct(c.budget)} · <b>${fmtDur(c.allowedDowntimeMin)}</b> of downtime per ${windowDays}d</div>
+        <div class="slo-eq">≈ ${fmtDur(c.perWeekMin)} / week · ${fmtDur(c.perDayMin)} / day</div>
+      </div>
+    </div>
+    <div class="slo-sub"><span>Multi-window burn-rate alerts</span><span class="cite">Google SRE Workbook method</span></div>
+    <div class="slo-tablewrap"><table class="slo-table">
+      <thead><tr><th>Alert</th><th>Long / short</th><th>Burn</th><th>Error rate ≥</th><th>Budget gone in</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="slo-tabs">
+      <button class="slo-tab active" data-tab="prom" type="button">Prometheus rules</button>
+      <button class="slo-tab" data-tab="mcp" type="button">MCP tool call</button>
+    </div>
+    <div class="slo-pane" data-pane="prom">
+      <div class="slo-bar"><button class="slo-copy" type="button">Copy rules</button></div>
+      <pre class="slo-code">${esc(yaml)}</pre>
+    </div>
+    <div class="slo-pane" data-pane="mcp" hidden>
+      <div class="slo-bar"><button class="slo-copy" type="button">Copy JSON</button></div>
+      <pre class="slo-code">${esc(mcp)}</pre>
+    </div>
+    <div class="slo-foot">Same SRE math, exposed as an MCP tool an LLM agent can call — the bridge between reliability engineering and agentic ops. <a href="https://github.com/arpothireddy" target="_blank" rel="noopener">See my MCP work →</a></div>
+  </div>`;
+}
+
+function copyText(text, btn){
+  const done = () => { const o = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = o; }, 1400); };
+  const fallback = () => { try { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); } catch(e){} };
+  if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done).catch(fallback); }
+  else fallback();
+}
+
+function handleSloSubmit(){
+  if (busy) return;
+  const sloPct = parseFloat(sloTarget.value);
+  const windowDays = parseInt(sloWindow.value, 10);
+  if (!(sloPct > 0 && sloPct < 100)){ addSys('Enter an SLO target between 0 and 100 — e.g. 99.9.'); return; }
+  const c = computeSLO(sloPct, windowDays);
+  const el = addMsg('SLO Sandbox', 'agent', sloCardHtml(sloPct, windowDays, c));
+  el.querySelectorAll('.slo-tab').forEach(tab => tab.addEventListener('click', () => {
+    const which = tab.dataset.tab;
+    el.querySelectorAll('.slo-tab').forEach(t => t.classList.toggle('active', t === tab));
+    el.querySelectorAll('.slo-pane').forEach(p => { p.hidden = p.dataset.pane !== which; });
+  }));
+  el.querySelectorAll('.slo-copy').forEach(btn => btn.addEventListener('click', () => {
+    copyText(btn.closest('.slo-pane').querySelector('pre').textContent, btn);
+  }));
+}
+
 /* ══════════════════════ EVENTS ══════════════════════ */
 input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleChatSubmit(); }});
 sendBtn.addEventListener('click', handleChatSubmit);
 jdInput.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey) && e.key==='Enter'){ e.preventDefault(); handleJdFitSubmit(); }});
 jdSubmitBtn.addEventListener('click', handleJdFitSubmit);
+sloCompute.addEventListener('click', handleSloSubmit);
+sloTarget.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleSloSubmit(); }});
+sloPresets.addEventListener('click', e=>{ const b=e.target.closest('button[data-slo]'); if(!b) return; sloTarget.value=b.dataset.slo; handleSloSubmit(); });
 
 function setMode(m){
   if (busy) return;
   mode = m;
   [...modeToggle.children].forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
   chatRow.style.display = mode==='chat' ? 'flex' : 'none';
-  jdRow.style.display = mode==='jd' ? 'flex' : 'none';
-  footHint.textContent = mode==='chat'
-    ? "This agent answers from Avinash's résumé — recruiters, ask away."
-    : "Paste a job description to see how Avinash's background fits.";
-  (mode==='chat' ? input : jdInput).focus();
+  jdRow.style.display   = mode==='jd'   ? 'flex' : 'none';
+  sloRow.style.display  = mode==='slo'  ? 'flex' : 'none';
+  footHint.textContent =
+      mode==='chat' ? "This agent answers from Avinash's résumé — recruiters, ask away."
+    : mode==='jd'   ? "Paste a job description to see how Avinash's background fits."
+    :                 "Live SRE math — set an SLO target and window to model the error budget and burn-rate alerts.";
+  (mode==='chat' ? input : mode==='jd' ? jdInput : sloTarget).focus();
 }
 modeToggle.addEventListener('click', e=>{
   const btn = e.target.closest('.mode-btn');
