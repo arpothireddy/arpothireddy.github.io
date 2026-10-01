@@ -696,18 +696,55 @@
   .flight-wash{position:absolute;inset:0;opacity:0;pointer-events:none;background:#fff}
   .bot{
     position:fixed;z-index:3;pointer-events:none;
-    background:linear-gradient(155deg,#ffe0bd 0%,#e08a5f 48%,#bf5c39 100%);
-    box-shadow:0 0 30px rgba(217,119,87,.85),0 0 110px rgba(217,119,87,.4);
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(118% 110% at 28% 20%, #fff4e8 0%, #f6b98d 26%, #df8a5e 52%, #bf5c39 76%, #8e3b1f 100%);
+    box-shadow:
+      inset 0 -7px 14px rgba(84,26,9,.5),
+      inset 0 3px 9px rgba(255,238,220,.5),
+      0 0 24px rgba(217,119,87,.7),
+      0 0 86px rgba(217,119,87,.33);
     transition:left .75s var(--ease),top .75s var(--ease),width .75s var(--ease),
                height .75s var(--ease),border-radius .75s var(--ease),opacity .4s linear;
   }
-  .bot::after{
-    content:"";position:absolute;left:50%;top:50%;width:150%;height:150%;
-    transform:translate(-50%,-50%);border-radius:50%;
-    background:radial-gradient(circle,rgba(255,224,189,.55) 0%,rgba(217,119,87,0) 70%);
+  /* glossy visor — two warm lights sit behind the glass */
+  .bot-visor{
+    position:relative;z-index:2;overflow:hidden;
+    width:52%;height:29%;margin-top:-6%;border-radius:999px;
+    display:flex;align-items:center;justify-content:center;gap:19%;
+    background:linear-gradient(180deg,#43291e 0%,#140c08 52%,#2a1a12 100%);
+    box-shadow:inset 0 1.5px 2px rgba(255,236,216,.45),inset 0 -2px 5px rgba(0,0,0,.65),0 1px 3px rgba(84,26,9,.55);
+    opacity:0;transition:opacity .45s var(--ease) .12s;
   }
-  .bot.is-cruise{animation:botBob 1.5s ease-in-out infinite}
-  @keyframes botBob{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+  .bot-visor::after{
+    content:"";position:absolute;left:-34%;top:0;width:58%;height:100%;
+    background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.4),rgba(255,255,255,0));
+    transform:skewX(-18deg);
+  }
+  .bot-visor i{
+    width:13%;height:30%;min-width:2.5px;min-height:3px;border-radius:999px;
+    background:#ffd9ad;box-shadow:0 0 7px rgba(255,207,156,.95);
+  }
+  /* specular highlight */
+  .bot-spec{
+    position:absolute;left:17%;top:11%;width:35%;height:27%;z-index:3;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 70%);
+    opacity:0;transition:opacity .45s var(--ease) .08s;
+  }
+  /* slow orbital ring */
+  .bot-ring{
+    position:absolute;left:50%;top:50%;width:172%;height:172%;z-index:1;border-radius:50%;
+    border:1px solid rgba(255,214,178,.45);
+    opacity:0;transition:opacity .5s var(--ease) .2s;
+    animation:botRing 7s linear infinite;
+  }
+  @keyframes botRing{
+    from{transform:translate(-50%,-50%) rotateX(74deg) rotate(0deg)}
+    to{transform:translate(-50%,-50%) rotateX(74deg) rotate(360deg)}
+  }
+  .bot.is-formed .bot-visor,.bot.is-formed .bot-spec,.bot.is-formed .bot-ring{opacity:1}
+  /* the tab bar flags itself as the bot docks */
+  .mode-btn.tab-hint{animation:tabHint .55s var(--ease)}
+  @keyframes tabHint{0%,100%{transform:none}38%{transform:translateY(-7px)}}
   .flight-skip{
     position:absolute;right:20px;bottom:20px;z-index:4;
     background:rgba(246,241,232,.08);color:#f6f1e8;border:1px solid rgba(246,241,232,.3);
@@ -869,7 +906,7 @@
 <div class="flight" id="flight" hidden aria-hidden="true">
   <canvas id="flightCanvas"></canvas>
   <div class="flight-wash" id="flightWash"></div>
-  <div class="bot" id="bot"></div>
+  <div class="bot" id="bot"><span class="bot-ring"></span><span class="bot-spec"></span><span class="bot-visor"><i></i><i></i></span></div>
   <button class="flight-skip" id="flightSkip" type="button">Skip</button>
 </div>
 
@@ -1811,10 +1848,10 @@ function runBoot(){
     if (box){ box.classList.add('is-out'); setTimeout(() => box.remove(), 650); }
   };
   if (!box || lessMotion()){ if (num) num.textContent = '100'; release(); return; }
-  const DUR = 1900, t0 = performance.now();
+  const DUR = 2900, t0 = performance.now();
   (function step(now){
     const k = Math.min(1, (now - t0) / DUR);
-    const eased = 1 - Math.pow(1 - k, 3);          // ease-out
+    const eased = 1 - Math.pow(1 - k, 2);          // ease-out, steadier
     const pct = Math.round(eased * 100);
     num.textContent = pct;
     bar.style.width = eased * 100 + '%';
@@ -1831,7 +1868,11 @@ const FLIGHT_STAGES = [
   { t:3120, bg:'#3a2415', star:'#ffdcb6', speed:24,  kind:'bloom',  flash:'#ffffff' },
   { t:3760, bg:'#f4f1ea', star:'#cfc5b4', speed:2.5, kind:'land',   flash:'#ffffff' }
 ];
-const FLIGHT_END = 4500;
+const FLIGHT_END = 5700;
+const SITE_T = 3800;      // site is revealed under the bot
+const DOCK_T = 3960;      // bot breaks for the Chat tab
+const DOCK_DUR = 950;
+const HINT_T = DOCK_T + DOCK_DUR;
 
 function runFlight(){
   const enterEl = document.getElementById('enter');
@@ -1866,13 +1907,13 @@ function runFlight(){
   enterEl.classList.add('is-out');
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const S = 34;
+    const S = 52;
     bot.style.left = (window.innerWidth / 2 - S / 2) + 'px';
     bot.style.top = (window.innerHeight / 2 - S / 2) + 'px';
     bot.style.width = S + 'px';
     bot.style.height = S + 'px';
     bot.style.borderRadius = '50%';
-    setTimeout(() => bot.classList.add('is-cruise'), 760);
+    setTimeout(() => bot.classList.add('is-formed'), 700);
   }));
 
   // ── starfield warp ──
@@ -1893,6 +1934,26 @@ function runFlight(){
 
   const F = 420;
   let last = -1, flashAt = -1, flashCol = '#fff';
+  let revealed = false, hinted = false, dockTo = null;
+  let dockFrom = { dx:0, dy:0, bank:0 };
+
+  // where the Chat tab sits, relative to the bot's centred home
+  function tabTarget(){
+    const chat = document.querySelector('.mode-btn[data-mode="chat"]');
+    if (!chat) return { dx:0, dy:0 };
+    const r = chat.getBoundingClientRect();
+    if (!r.width) return { dx:0, dy:0 };
+    return { dx:(r.left + r.width / 2) - window.innerWidth / 2,
+             dy:(r.top + r.height / 2) - window.innerHeight / 2 };
+  }
+  // ripple across the tabs so the other modes get noticed
+  function hintTabs(){
+    const btns = document.querySelectorAll('#modeToggle .mode-btn');
+    btns.forEach((bn, i) => setTimeout(() => {
+      bn.classList.add('tab-hint');
+      setTimeout(() => bn.classList.remove('tab-hint'), 650);
+    }, i * 95));
+  }
   const t0 = performance.now();
 
   (function frame(now){
@@ -1958,10 +2019,44 @@ function runFlight(){
       else { wash.style.opacity = '0'; flashAt = -1; }
     }
 
-    // landing: bot settles then dissolves
-    if (st.kind === 'land'){
-      const lk = Math.min(1, (t - st.t) / 600);
-      bot.style.opacity = String(1 - lk);
+    // ── bot motion: wander in flight, then break for the Chat tab ──
+    if (t > 780){
+      if (t < DOCK_T){
+        const dx = Math.sin(t / 520) * W * 0.17 + Math.sin(t / 230) * W * 0.05;
+        const dy = Math.cos(t / 610) * H * 0.11 + Math.sin(t / 310) * H * 0.035;
+        const bank = Math.sin(t / 520) * 16 + Math.sin(t / 230) * 5;
+        bot.style.transform = `translate(${dx}px,${dy}px) rotate(${bank}deg)`;
+        dockFrom = { dx, dy, bank };
+      } else {
+        if (!dockTo) dockTo = tabTarget();
+        const k = Math.min(1, (t - DOCK_T) / DOCK_DUR);
+        const e = 1 - Math.pow(1 - k, 3);
+        const dx = dockFrom.dx + (dockTo.dx - dockFrom.dx) * e;
+        const dy = dockFrom.dy + (dockTo.dy - dockFrom.dy) * e;
+        const bank = dockFrom.bank * (1 - e);
+        const sc = 1 - 0.42 * e;
+        bot.style.transform = `translate(${dx}px,${dy}px) rotate(${bank}deg) scale(${sc})`;
+      }
+    }
+
+    // reveal the live site under the bot
+    if (!revealed && t >= SITE_T){
+      revealed = true;
+      cv.style.transition = 'opacity .6s linear';
+      cv.style.opacity = '0';
+      wash.style.opacity = '0';
+      flight.style.background = 'transparent';
+      flight.style.pointerEvents = 'none';
+      if (skip) skip.style.display = 'none';
+      if (enterEl.isConnected) enterEl.remove();
+      startSite();
+    }
+
+    // docked: flag the other tabs, then dissolve
+    if (!hinted && t >= HINT_T){
+      hinted = true;
+      hintTabs();
+      setTimeout(() => { bot.style.opacity = '0'; }, 460);
     }
 
     if (t < FLIGHT_END) requestAnimationFrame(frame); else finish();
