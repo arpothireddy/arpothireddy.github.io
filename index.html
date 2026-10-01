@@ -697,23 +697,51 @@
   .bot{
     position:fixed;z-index:3;pointer-events:none;
     display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(155deg,#ffe0bd 0%,#e08a5f 48%,#bf5c39 100%);
-    box-shadow:0 0 30px rgba(217,119,87,.85),0 0 110px rgba(217,119,87,.4);
+    background:radial-gradient(118% 110% at 28% 20%, #fff4e8 0%, #f6b98d 26%, #df8a5e 52%, #bf5c39 76%, #8e3b1f 100%);
+    box-shadow:
+      inset 0 -7px 14px rgba(84,26,9,.5),
+      inset 0 3px 9px rgba(255,238,220,.5),
+      0 0 24px rgba(217,119,87,.7),
+      0 0 86px rgba(217,119,87,.33);
     transition:left .75s var(--ease),top .75s var(--ease),width .75s var(--ease),
                height .75s var(--ease),border-radius .75s var(--ease),opacity .4s linear;
   }
-  .bot-antenna{
-    position:absolute;left:50%;top:-15px;width:2px;height:15px;z-index:2;
-    background:rgba(255,230,205,.95);transform:translateX(-50%);
-    opacity:0;transition:opacity .4s var(--ease) .05s;
+  /* glossy visor — two warm lights sit behind the glass */
+  .bot-visor{
+    position:relative;z-index:2;overflow:hidden;
+    width:52%;height:29%;margin-top:-6%;border-radius:999px;
+    display:flex;align-items:center;justify-content:center;gap:19%;
+    background:linear-gradient(180deg,#43291e 0%,#140c08 52%,#2a1a12 100%);
+    box-shadow:inset 0 1.5px 2px rgba(255,236,216,.45),inset 0 -2px 5px rgba(0,0,0,.65),0 1px 3px rgba(84,26,9,.55);
+    opacity:0;transition:opacity .45s var(--ease) .12s;
   }
-  .bot-antenna::after{
-    content:"";position:absolute;left:50%;top:-5px;width:7px;height:7px;border-radius:50%;
-    background:#fff;box-shadow:0 0 12px #ffd9b0;transform:translateX(-50%);
+  .bot-visor::after{
+    content:"";position:absolute;left:-34%;top:0;width:58%;height:100%;
+    background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.4),rgba(255,255,255,0));
+    transform:skewX(-18deg);
   }
-  .bot-face{position:relative;z-index:2;display:flex;gap:10px;opacity:0;transition:opacity .4s var(--ease) .14s}
-  .bot-face i{display:block;width:5px;height:5px;border-radius:50%;background:#43200f;box-shadow:0 0 0 2px rgba(255,255,255,.3)}
-  .bot.is-formed .bot-antenna,.bot.is-formed .bot-face{opacity:1}
+  .bot-visor i{
+    width:13%;height:30%;min-width:2.5px;min-height:3px;border-radius:999px;
+    background:#ffd9ad;box-shadow:0 0 7px rgba(255,207,156,.95);
+  }
+  /* specular highlight */
+  .bot-spec{
+    position:absolute;left:17%;top:11%;width:35%;height:27%;z-index:3;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 70%);
+    opacity:0;transition:opacity .45s var(--ease) .08s;
+  }
+  /* slow orbital ring */
+  .bot-ring{
+    position:absolute;left:50%;top:50%;width:172%;height:172%;z-index:1;border-radius:50%;
+    border:1px solid rgba(255,214,178,.45);
+    opacity:0;transition:opacity .5s var(--ease) .2s;
+    animation:botRing 7s linear infinite;
+  }
+  @keyframes botRing{
+    from{transform:translate(-50%,-50%) rotateX(74deg) rotate(0deg)}
+    to{transform:translate(-50%,-50%) rotateX(74deg) rotate(360deg)}
+  }
+  .bot.is-formed .bot-visor,.bot.is-formed .bot-spec,.bot.is-formed .bot-ring{opacity:1}
   /* the tab bar flags itself as the bot docks */
   .mode-btn.tab-hint{animation:tabHint .55s var(--ease)}
   @keyframes tabHint{0%,100%{transform:none}38%{transform:translateY(-7px)}}
@@ -878,7 +906,7 @@
 <div class="flight" id="flight" hidden aria-hidden="true">
   <canvas id="flightCanvas"></canvas>
   <div class="flight-wash" id="flightWash"></div>
-  <div class="bot" id="bot"><span class="bot-antenna"></span><span class="bot-face"><i></i><i></i></span></div>
+  <div class="bot" id="bot"><span class="bot-ring"></span><span class="bot-spec"></span><span class="bot-visor"><i></i><i></i></span></div>
   <button class="flight-skip" id="flightSkip" type="button">Skip</button>
 </div>
 
@@ -1879,7 +1907,7 @@ function runFlight(){
   enterEl.classList.add('is-out');
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const S = 44;
+    const S = 52;
     bot.style.left = (window.innerWidth / 2 - S / 2) + 'px';
     bot.style.top = (window.innerHeight / 2 - S / 2) + 'px';
     bot.style.width = S + 'px';
