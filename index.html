@@ -89,6 +89,11 @@
     --serif:'Fraunces',Georgia,'Times New Roman',serif;
     --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   }
+  @property --pct {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   ::selection{background:#f4e6dd;color:var(--ink)}
@@ -192,8 +197,9 @@
     position:sticky;top:0;z-index:5;
   }
   .stage-id{min-width:0}
-  .chat-title{font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.035em;line-height:1.1}
-  .chat-proof{margin-top:3px;font-size:13px;letter-spacing:-.011em;color:var(--ink-2)}
+  .chat-title{font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.035em;line-height:1.1;animation:unveil .9s var(--ease) both}
+  .chat-proof{margin-top:3px;font-size:13px;letter-spacing:-.011em;color:var(--ink-2);animation:unveil .9s var(--ease) .12s both}
+  @keyframes unveil{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
   .conversation{
     flex:1;overflow-y:auto;padding:22px 22px 12px;
@@ -345,7 +351,7 @@
     box-shadow:inset 0 1px 0 #fff, 0 0 0 1px rgba(41,38,31,.05), var(--shadow);
     display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
   }
-  .slo-gauge .fit-ring{width:128px;height:128px;flex-basis:128px}
+  .slo-gauge .fit-ring{width:128px;height:128px;flex-basis:128px;transition:--pct 1.15s var(--ease)}
   .slo-gauge .fit-ring::after{background:#fff}
   .slo-gauge .fit-ring b{font-size:26px;letter-spacing:-.03em}
   .slo-board{
@@ -425,11 +431,17 @@
   }
   .proj-lead b{color:var(--clay-deep);font-weight:500}
   .proj-card{
+    position:relative;overflow:hidden;
     background:#fff;border:none;border-radius:22px;
     padding:22px 24px 20px;display:flex;flex-direction:column;gap:12px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 1px rgba(41,38,31,.05), var(--shadow);
     animation:rise .85s var(--ease) both;
     transition:transform .55s var(--ease), box-shadow .55s var(--ease);
+  }
+  .proj-card::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(105deg, transparent 38%, rgba(255,255,255,.7) 50%, transparent 62%);
+    transform:translateX(-130%);
   }
   .proj-card:nth-child(2){animation-delay:.05s}
   .proj-card:nth-child(3){animation-delay:.12s}
@@ -437,7 +449,36 @@
   .proj-card:nth-child(5){animation-delay:.26s}
   @media(hover:hover){
     .proj-card:hover{transform:translateY(-6px);box-shadow:inset 0 1px 0 #fff, 0 0 0 1px rgba(41,38,31,.05), 0 28px 50px -24px rgba(41,38,31,.32)}
+    .proj-card:hover::after{animation:sheen .9s var(--ease)}
   }
+  @keyframes sheen{to{transform:translateX(130%)}}
+  @keyframes stageLive{
+    0%,14%{background:var(--clay);color:#fff}
+    22%,100%{background:rgba(41,38,31,.04);color:var(--ink)}
+  }
+  .proj-pipe.is-demo .proj-stage{animation:stageLive 7s linear infinite}
+  .proj-pipe.is-demo .proj-stage:nth-child(3){animation-delay:1.15s}
+  .proj-pipe.is-demo .proj-stage:nth-child(5){animation-delay:2.3s}
+  .proj-pipe.is-demo .proj-stage:nth-child(7){animation-delay:3.45s}
+  .proj-pipe.is-demo .proj-stage:nth-child(9){animation-delay:4.6s}
+  @keyframes toolLive{
+    0%,16%{background:#1c1a17;color:#f6f1e8}
+    26%,100%{background:rgba(41,38,31,.04);color:var(--clay-deep)}
+  }
+  .proj-object.is-demo span{animation:toolLive 5.6s linear infinite}
+  .proj-object.is-demo span:nth-child(2){animation-delay:1.4s}
+  .proj-object.is-demo span:nth-child(3){animation-delay:2.8s}
+  .proj-object.is-demo span:nth-child(4){animation-delay:4.2s}
+  @keyframes termIn{
+    0%,6%{opacity:.28}
+    14%,62%{opacity:1}
+    78%,100%{opacity:.28}
+  }
+  .proj-eq.is-demo .v span{display:inline;animation:termIn 6.5s linear infinite;opacity:.28}
+  .proj-eq.is-demo .v span:nth-child(2){animation-delay:.4s}
+  .proj-eq.is-demo .v span:nth-child(3){animation-delay:.95s}
+  .proj-eq.is-demo .v span:nth-child(4){animation-delay:1.35s}
+  .proj-eq.is-demo .v span:nth-child(5){animation-delay:1.9s}
   .proj-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .proj-idx{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ink-3)}
   .proj-kind{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--clay-deep)}
@@ -633,6 +674,10 @@
   @media(prefers-reduced-motion:reduce){
     *{animation-duration:.001s!important;transition-duration:.01s!important;scroll-behavior:auto!important}
     .think-verb{-webkit-text-fill-color:var(--clay-deep);color:var(--clay-deep)}
+    .proj-pipe.is-demo .proj-stage,
+    .proj-object.is-demo span,
+    .proj-eq.is-demo .v span,
+    .proj-card::after{animation:none}
   }
 </style>
 </head>
@@ -1107,7 +1152,7 @@ function sloCardHtml(sloPct, windowDays, c){
   return `<div class="slo-card">
     <div class="slo-instrument">
       <div class="slo-gauge">
-        <div class="fit-ring" style="--pct:${sloPct};--ring:var(--clay)"><b>${sloPct}<small>%</small></b></div>
+        <div class="fit-ring" style="--pct:0;--ring:var(--clay)"><b>${sloPct}<small>%</small></b></div>
         <div class="slo-budget">
           <div class="k">Error budget · ${windowDays}d</div>
           <div class="v">${fmtPct(c.budget)} · <b>${fmtDur(c.allowedDowntimeMin)}</b></div>
@@ -1173,6 +1218,8 @@ function handleSloSubmit(){
     }, null, 2);
     mcpBtn.addEventListener('click', () => copyText(mcpCall, mcpBtn));
   }
+  const ring = el.querySelector('.slo-gauge .fit-ring');
+  if (ring) requestAnimationFrame(() => ring.style.setProperty('--pct', String(sloPct)));
   el.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
@@ -1238,7 +1285,7 @@ function chipRow(items){
   return items.map(s => `<span class="proj-chip">${esc(s)}</span>`).join('');
 }
 function pipeRow(stages){
-  return `<div class="proj-pipe">${stages.map((s,i) => {
+  return `<div class="proj-pipe is-demo">${stages.map((s,i) => {
     const cls = i === stages.length - 1 ? 'proj-stage end' : 'proj-stage';
     const chev = i < stages.length - 1 ? '<span class="proj-chev" aria-hidden="true">→</span>' : '';
     return `<span class="${cls}">${esc(s)}</span>${chev}`;
@@ -1259,7 +1306,7 @@ function projectsHtml(){
     <article class="proj-card">
       <div class="proj-top"><span class="proj-idx">02</span><span class="proj-kind">MCP tools</span></div>
       <h3 class="proj-name">sre-toolkit-mcp</h3>
-      <div class="proj-object"><span>error_budget</span><span>burn_rate</span><span>blast_radius</span><span>composite_slo</span></div>
+      <div class="proj-object is-demo"><span>error_budget</span><span>burn_rate</span><span>blast_radius</span><span>composite_slo</span></div>
       <p class="proj-blurb">The agent calls the tool. It does not guess the number.</p>
       <div class="proj-links">
         <a href="https://github.com/arpothireddy/sre-toolkit-mcp" target="_blank" rel="noopener">GitHub →</a>
@@ -1281,7 +1328,7 @@ function projectsHtml(){
     <article class="proj-card">
       <div class="proj-top"><span class="proj-idx">04</span><span class="proj-kind">Product</span></div>
       <h3 class="proj-name">Assay</h3>
-      <div class="proj-eq"><div class="k">fair</div><div class="v">baseline × (1 + condition) × (1 + completeness)</div></div>
+      <div class="proj-eq is-demo"><div class="k">fair</div><div class="v"><span>baseline</span> <span>× (1 + condition)</span> <span>× (1 + completeness)</span></div></div>
       <p class="proj-blurb">The model can talk. It cannot move a price.</p>
       <div class="proj-links">
         <a href="https://watchassay.com" target="_blank" rel="noopener">watchassay.com →</a>
