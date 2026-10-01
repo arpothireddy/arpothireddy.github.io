@@ -184,23 +184,19 @@
   /* ─────────── Chat ─────────── */
   .chat{display:flex;flex-direction:column;height:100vh;position:relative;min-width:0}
   .chat-header{
-    padding:18px 36px;border-bottom:1px solid rgba(41,38,31,.06);
-    display:flex;align-items:center;gap:14px;
+    padding:12px 22px;border-bottom:1px solid rgba(41,38,31,.06);
+    display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
     background:var(--glass);
     -webkit-backdrop-filter:saturate(180%) blur(20px);
     backdrop-filter:saturate(180%) blur(20px);
     position:sticky;top:0;z-index:5;
   }
-  .chat-avatar{
-    width:34px;height:34px;border-radius:9px;background:var(--clay);
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .chat-avatar svg{width:18px;height:18px;color:#fff}
-  .chat-title{font-size:15px;font-weight:600;letter-spacing:-.02em}
-  .chat-sub{font-size:12.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+  .stage-id{min-width:0}
+  .chat-title{font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.035em;line-height:1.1}
+  .chat-proof{margin-top:3px;font-size:13px;letter-spacing:-.011em;color:var(--ink-2)}
 
   .conversation{
-    flex:1;overflow-y:auto;padding:36px 40px 16px;
+    flex:1;overflow-y:auto;padding:22px 22px 12px;
     display:flex;flex-direction:column;gap:26px;
     scroll-behavior:smooth;
     scrollbar-width:thin;scrollbar-color:rgba(41,38,31,.22) transparent;
@@ -208,8 +204,8 @@
   .conversation::-webkit-scrollbar{width:10px}
   .conversation::-webkit-scrollbar-thumb{background:rgba(41,38,31,.18);border-radius:999px;border:3px solid transparent;background-clip:padding-box}
 
-  .msg{display:flex;gap:13px;width:min(760px,100%);max-width:760px;align-self:center;animation:rise .7s var(--ease)}
-  .msg.wide{width:min(1180px,100%);max-width:1180px;gap:0;container-type:inline-size}
+  .msg{display:flex;gap:13px;width:100%;max-width:none;align-self:stretch;animation:rise .7s var(--ease)}
+  .msg.wide{gap:0;container-type:inline-size}
   .msg.wide .av,.msg.wide .who{display:none}
   @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   @keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -225,7 +221,7 @@
   .msg.visitor .av{background:#dfd9ca;color:var(--ink-2)}
   .msg.system{justify-content:center;max-width:100%}
 
-  .body-wrap{min-width:0}
+  .body-wrap{flex:1;min-width:0;width:100%}
   .who{font-size:11.5px;color:var(--ink-3);margin-bottom:5px;font-weight:500;letter-spacing:.01em}
   .msg.visitor .who{text-align:right}
   .bubble{
@@ -282,18 +278,18 @@
 
   /* composer */
   .composer{
-    display:flex;flex-direction:column;align-items:center;
-    padding:16px 36px 22px;border-top:1px solid rgba(41,38,31,.06);
+    display:flex;flex-direction:column;align-items:stretch;
+    padding:8px 22px 10px;border-top:1px solid rgba(41,38,31,.06);
     background:var(--glass);
     -webkit-backdrop-filter:saturate(180%) blur(22px);
     backdrop-filter:saturate(180%) blur(22px);
   }
+  .chat[data-mode="projects"] .composer,
+  .chat[data-mode="arch"] .composer{display:none}
   .composer > .input-row,
   .composer > .jd-row,
   .composer > .slo-row,
-  .composer > .foot-hint{width:min(760px,100%)}
-  .chat[data-mode="projects"] .composer > .foot-hint,
-  .chat[data-mode="arch"] .composer > .foot-hint{width:min(1180px,100%)}
+  .composer > .foot-hint{width:100%}
 
   /* JD fit result card */
   .fit-card{margin-top:2px}
@@ -342,7 +338,21 @@
   .slo-presets button:hover{border-color:var(--clay)}
   .slo-presets button em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--clay-deep)}
 
-  .slo-card{display:flex;flex-direction:column;gap:13px;margin-top:2px}
+  .slo-card{display:flex;flex-direction:column;gap:14px;margin-top:2px}
+  .slo-instrument{display:grid;grid-template-columns:minmax(220px,280px) minmax(0,1fr);gap:16px;align-items:stretch}
+  .slo-gauge{
+    background:#fff;border-radius:22px;padding:22px 18px 18px;
+    box-shadow:inset 0 1px 0 #fff, 0 0 0 1px rgba(41,38,31,.05), var(--shadow);
+    display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
+  }
+  .slo-gauge .fit-ring{width:128px;height:128px;flex-basis:128px}
+  .slo-gauge .fit-ring::after{background:#fff}
+  .slo-gauge .fit-ring b{font-size:26px;letter-spacing:-.03em}
+  .slo-board{
+    background:#fff;border-radius:22px;padding:16px 18px 8px;
+    box-shadow:inset 0 1px 0 #fff, 0 0 0 1px rgba(41,38,31,.05), var(--shadow);
+    min-width:0;
+  }
   .slo-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
   .slo-mcpcopy{margin-left:auto;align-self:flex-start;font-family:var(--sans);font-size:11.5px;font-weight:500;color:var(--clay-deep);background:var(--clay-tint);border:1px solid #ecd9cd;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap;transition:background .15s}
   .slo-mcpcopy:hover{background:#efd9cc}
@@ -461,10 +471,20 @@
     border-bottom:1px solid rgba(191,92,57,.35);transition:border-color .3s var(--ease),color .3s var(--ease);
   }
   .proj-links a:hover,.proj-jump:hover{border-bottom-color:var(--clay-deep);color:var(--clay)}
+  .proj-object{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .proj-object span{
+    font-family:var(--mono);font-size:12.5px;color:var(--clay-deep);
+    background:rgba(41,38,31,.04);border-radius:12px;padding:11px 12px;
+  }
+  .proj-eq{
+    background:#1c1a17;color:#f6f1e8;border-radius:16px;padding:16px 18px 15px;
+  }
+  .proj-eq .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#b7aa9a}
+  .proj-eq .v{font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.03em;line-height:1.25;margin-top:6px}
   .mode-btn:focus-visible,.proj-jump:focus-visible,a:focus-visible{outline:2px solid var(--clay);outline-offset:3px;border-radius:4px}
 
   /* follow-up suggestion chips after an answer */
-  .followups{display:flex;flex-wrap:wrap;gap:8px;width:min(760px,100%);align-self:center;padding:2px 0 4px 43px;animation:rise .4s var(--ease)}
+  .followups{display:flex;flex-wrap:wrap;gap:8px;width:100%;align-self:stretch;padding:2px 0 4px 43px;animation:rise .4s var(--ease)}
   .followup-chip{
     font-family:var(--sans);font-size:13px;letter-spacing:-.01em;color:var(--clay-deep);
     background:var(--clay-tint);border:none;border-radius:999px;
@@ -513,12 +533,12 @@
   .send:active{transform:scale(.96)}
   .send:disabled{background:#d8d2c4;cursor:default}
   .send svg{width:18px;height:18px;color:#fff}
-  .foot-hint{font-size:11px;color:var(--ink-3);text-align:center;margin-top:10px}
+  .foot-hint{font-size:11px;color:var(--ink-3);text-align:center;margin-top:6px}
 
   /* mode toggle + JD fit panel */
   .mode-toggle{
     position:relative;display:flex;flex-wrap:wrap;gap:4px;align-items:center;
-    width:fit-content;max-width:100%;margin:0 0 14px;
+    width:fit-content;max-width:100%;margin:0;flex-shrink:0;
     padding:4px;border-radius:999px;
     background:rgba(41,38,31,.055);
   }
@@ -591,17 +611,13 @@
     .sidebar.open{transform:none}
     .overlay.show{display:block;position:fixed;inset:0;background:rgba(41,38,31,.4);z-index:35}
     .chat{height:calc(100vh - 49px)}
-    .chat-header{padding:16px 20px}
-    .conversation{padding:22px 18px 10px;min-width:0}
-    .composer{padding:12px 18px 18px;min-width:0}
-    .msg,.msg.wide,.followups{width:100%;max-width:100%}
-    .composer > .input-row,
-    .composer > .jd-row,
-    .composer > .slo-row,
-    .composer > .foot-hint,
-    .chat[data-mode="projects"] .composer > .foot-hint,
-    .chat[data-mode="arch"] .composer > .foot-hint{width:100%}
+    .chat-header{flex-direction:column;align-items:stretch;padding:12px 14px;gap:10px}
+    .chat-title{font-size:20px}
+    .conversation{padding:18px 14px 8px;min-width:0}
+    .composer{padding:8px 14px 10px;min-width:0}
+    .slo-instrument{grid-template-columns:1fr}
     .proj-wrap{grid-template-columns:1fr}
+    .proj-eq .v{font-size:18px}
     .hello{font-size:24px}
     .mode-toggle{justify-content:center;margin-left:auto;margin-right:auto}
     .mode-btn{font-size:12px;padding:7px 12px}
@@ -706,18 +722,10 @@
   <!-- ───── Chat ───── -->
   <main class="chat" data-mode="chat">
     <div class="chat-header">
-      <div class="chat-avatar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M3 12h2m14 0h2M5.6 18.4l1.4-1.4m10-10 1.4-1.4"/><circle cx="12" cy="12" r="3.2"/></svg>
+      <div class="stage-id">
+        <div class="chat-title">Avinash Reddy Pothireddy</div>
+        <div class="chat-proof">Lead SRE · 8+ years · Open to opportunities</div>
       </div>
-      <div>
-        <div class="chat-title">Avi's Portfolio Agent</div>
-        <div class="chat-sub"><span class="dot"></span>Ask me anything about Avinash</div>
-      </div>
-    </div>
-
-    <div class="conversation" id="conversation"></div>
-
-    <div class="composer">
       <div class="mode-toggle" id="modeToggle">
         <span class="mode-ind" aria-hidden="true"></span>
         <button class="mode-btn active" data-mode="chat" type="button">Chat</button>
@@ -726,6 +734,11 @@
         <button class="mode-btn" data-mode="arch" type="button">Architecture</button>
         <button class="mode-btn" data-mode="projects" type="button">Projects</button>
       </div>
+    </div>
+
+    <div class="conversation" id="conversation"></div>
+
+    <div class="composer">
       <div class="input-row" id="chatRow">
         <input id="termInput" type="text" placeholder="Ask about experience, AI/agent work, a specific tool…" autocomplete="off">
         <button class="send" id="sendBtn" aria-label="Send">
@@ -1092,20 +1105,26 @@ function sloCardHtml(sloPct, windowDays, c){
         <td>${fmtDur(t.exhaustH * 60)}</td>
       </tr>`).join('');
   return `<div class="slo-card">
-    <div class="slo-head">
-      <div class="slo-target">${sloPct}%<small>/ ${windowDays}d</small></div>
-      <div class="slo-budget">
-        <div class="k">Error budget</div>
-        <div class="v">${fmtPct(c.budget)} · <b>${fmtDur(c.allowedDowntimeMin)}</b> of downtime per ${windowDays}d</div>
-        <div class="slo-eq">≈ ${fmtDur(c.perWeekMin)} / week · ${fmtDur(c.perDayMin)} / day</div>
+    <div class="slo-instrument">
+      <div class="slo-gauge">
+        <div class="fit-ring" style="--pct:${sloPct};--ring:var(--clay)"><b>${sloPct}<small>%</small></b></div>
+        <div class="slo-budget">
+          <div class="k">Error budget · ${windowDays}d</div>
+          <div class="v">${fmtPct(c.budget)} · <b>${fmtDur(c.allowedDowntimeMin)}</b></div>
+          <div class="slo-eq">≈ ${fmtDur(c.perWeekMin)} / week · ${fmtDur(c.perDayMin)} / day</div>
+        </div>
       </div>
+      <div class="slo-board">
+        <div class="slo-sub"><span>Multi-window burn-rate alerts</span><span class="cite">Google SRE Workbook method</span></div>
+        <div class="slo-tablewrap"><table class="slo-table">
+          <thead><tr><th>Alert</th><th>Long / short</th><th>Burn</th><th>Error rate ≥</th><th>Budget gone in</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="slo-head" style="justify-content:flex-end">
       <button class="slo-mcpcopy" type="button" title="Copy the MCP tools/call payload an agent would send">&#9109; Copy MCP call</button>
     </div>
-    <div class="slo-sub"><span>Multi-window burn-rate alerts</span><span class="cite">Google SRE Workbook method</span></div>
-    <div class="slo-tablewrap"><table class="slo-table">
-      <thead><tr><th>Alert</th><th>Long / short</th><th>Burn</th><th>Error rate ≥</th><th>Budget gone in</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>
     <div class="slo-tabs">
       <button class="slo-tab active" data-tab="prom" type="button">Prometheus rules</button>
       <button class="slo-tab" data-tab="mcp" type="button">MCP tool call</button>
@@ -1135,7 +1154,7 @@ function handleSloSubmit(){
   const windowDays = parseInt(sloWindow.value, 10);
   if (!(sloPct > 0 && sloPct < 100)){ addSys('Enter an SLO target between 0 and 100 — e.g. 99.9.'); return; }
   const c = computeSLO(sloPct, windowDays);
-  const el = addMsg('SLO Sandbox', 'agent', sloCardHtml(sloPct, windowDays, c));
+  const el = addMsg('SLO Sandbox', 'agent', sloCardHtml(sloPct, windowDays, c), true);
   el.querySelectorAll('.slo-tab').forEach(tab => tab.addEventListener('click', () => {
     const which = tab.dataset.tab;
     el.querySelectorAll('.slo-tab').forEach(t => t.classList.toggle('active', t === tab));
@@ -1154,6 +1173,7 @@ function handleSloSubmit(){
     }, null, 2);
     mcpBtn.addEventListener('click', () => copyText(mcpCall, mcpBtn));
   }
+  el.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 /* ══════════════════════ ARCHITECTURE ══════════════════════ */
@@ -1231,17 +1251,16 @@ function projectsHtml(){
     <article class="proj-card">
       <div class="proj-top"><span class="proj-idx">01</span><span class="proj-kind">Agent pipeline</span></div>
       <h3 class="proj-name">job-agent</h3>
-      <p class="proj-blurb">Self-hosted multi-stage system: discovery → scoring → résumé tailoring → form automation across Greenhouse, Ashby, Lever, Workday, and iCIMS, with human-supervised final submission.</p>
       ${pipeRow(['Discover','Score','Tailor','Fill','Human approve'])}
+      <p class="proj-blurb">Five boards, one pipeline. A person approves the last step.</p>
       <div class="proj-stack">${chipRow(['FastAPI','PostgreSQL','Playwright','Gemini','Claude','Ollama / Qwen2.5','GitOps'])}</div>
     </article>
 
     <article class="proj-card">
       <div class="proj-top"><span class="proj-idx">02</span><span class="proj-kind">MCP tools</span></div>
       <h3 class="proj-name">sre-toolkit-mcp</h3>
-      <p class="proj-blurb">FastMCP server exposing deterministic reliability math — error budget, burn rate, blast radius, composite SLO — so agents call verified calculations instead of guessing.</p>
-      <div class="proj-tools"><b>error_budget</b> · <b>burn_rate</b> · <b>blast_radius</b> · <b>composite_slo</b></div>
-      <div class="proj-stack">${chipRow(['FastMCP','Error budgets','Burn rate','pytest','GitHub Actions'])}</div>
+      <div class="proj-object"><span>error_budget</span><span>burn_rate</span><span>blast_radius</span><span>composite_slo</span></div>
+      <p class="proj-blurb">The agent calls the tool. It does not guess the number.</p>
       <div class="proj-links">
         <a href="https://github.com/arpothireddy/sre-toolkit-mcp" target="_blank" rel="noopener">GitHub →</a>
         <button class="proj-jump" type="button" data-jump="slo">Try the SLO Sandbox →</button>
@@ -1251,8 +1270,8 @@ function projectsHtml(){
     <article class="proj-card">
       <div class="proj-top"><span class="proj-idx">03</span><span class="proj-kind">This site</span></div>
       <h3 class="proj-name">Portfolio agent</h3>
-      <p class="proj-blurb">Claude-styled recruiter agent with chat and JD-fit on a FastAPI / Groq backend, deployed to Cloud Run, plus the SLO Sandbox and architecture diagram. You’re using it.</p>
-      <div class="proj-stack">${chipRow(['FastAPI','Groq','Cloud Run','GitHub Pages'])}</div>
+      ${pipeRow(['Browser','GitHub Pages','Cloud Run','Groq'])}
+      <p class="proj-blurb">You’re in it. Chat and JD fit on the same backend.</p>
       <div class="proj-links">
         <a href="https://github.com/arpothireddy/portfolio_backend" target="_blank" rel="noopener">Backend →</a>
         <button class="proj-jump" type="button" data-jump="chat">Ask the agent →</button>
@@ -1262,9 +1281,8 @@ function projectsHtml(){
     <article class="proj-card">
       <div class="proj-top"><span class="proj-idx">04</span><span class="proj-kind">Product</span></div>
       <h3 class="proj-name">Assay</h3>
-      <p class="proj-blurb">Fair market value for pre-owned luxury watches from live dealer inventory — not invented by a model. Deterministic Decimal arithmetic; LLMs only improve the conversation. Companion <b>assay-watch</b> probes <b>/health</b> every 5 minutes via GitHub Actions and Pushover-alerts when the ledger isn’t ready.</p>
-      <div class="proj-watch"><span class="dot" aria-hidden="true"></span><span>Outside-in watch · every 5 min · GHA → Pushover</span></div>
-      <div class="proj-stack">${chipRow(['Expo','FastAPI','LangGraph','FastMCP','Cloud Run','GHA watcher'])}</div>
+      <div class="proj-eq"><div class="k">fair</div><div class="v">baseline × (1 + condition) × (1 + completeness)</div></div>
+      <p class="proj-blurb">The model can talk. It cannot move a price.</p>
       <div class="proj-links">
         <a href="https://watchassay.com" target="_blank" rel="noopener">watchassay.com →</a>
       </div>
