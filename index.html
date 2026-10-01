@@ -670,14 +670,52 @@
   }
   .enter-go:hover{background:#f6f1e8;color:#141311}
   .enter-go:active{transform:scale(.98)}
-  .enter-picks{position:relative;display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;animation:unveil 1s var(--ease) .5s both}
-  .enter-picks button{
-    background:none;border:none;border-bottom:1px solid rgba(246,241,232,.28);
-    color:#d9d0c4;font-family:var(--sans);font-size:13px;letter-spacing:-.01em;
-    padding:4px 0;cursor:pointer;
-  }
-  .enter-picks button:hover{color:#fff;border-bottom-color:#fff}
   .enter.is-out{animation:enterOut .7s var(--ease) forwards;pointer-events:none}
+
+  /* ── Boot loader (1 → 100%) ── */
+  .boot{
+    position:fixed;inset:0;z-index:90;background:#141311;color:#f6f1e8;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .55s var(--ease);
+  }
+  .boot.is-out{opacity:0;pointer-events:none}
+  .boot-inner{display:flex;flex-direction:column;align-items:center;gap:22px;width:min(78vw,520px)}
+  .boot-pct{font-family:var(--mono);font-size:clamp(54px,12vw,120px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+  .boot-pct i{font-style:normal;font-size:.32em;color:#8d8275;margin-left:.15em;vertical-align:.9em}
+  .boot-bar{position:relative;width:100%;height:1px;background:rgba(246,241,232,.18);overflow:hidden}
+  .boot-bar span{position:absolute;left:0;top:0;height:100%;width:0;background:var(--clay)}
+  /* hold the landing until the loader finishes */
+  body.booting .enter{opacity:0}
+  body.booting .enter *{animation-play-state:paused!important}
+  .enter{transition:opacity .5s var(--ease)}
+
+  /* ── Flight (Enter → bot → space → home) ── */
+  .flight{position:fixed;inset:0;z-index:95;overflow:hidden;background:#141311}
+  .flight[hidden]{display:none}
+  .flight canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .flight-wash{position:absolute;inset:0;opacity:0;pointer-events:none;background:#fff}
+  .bot{
+    position:fixed;z-index:3;pointer-events:none;
+    background:linear-gradient(155deg,#ffe0bd 0%,#e08a5f 48%,#bf5c39 100%);
+    box-shadow:0 0 30px rgba(217,119,87,.85),0 0 110px rgba(217,119,87,.4);
+    transition:left .75s var(--ease),top .75s var(--ease),width .75s var(--ease),
+               height .75s var(--ease),border-radius .75s var(--ease),opacity .4s linear;
+  }
+  .bot::after{
+    content:"";position:absolute;left:50%;top:50%;width:150%;height:150%;
+    transform:translate(-50%,-50%);border-radius:50%;
+    background:radial-gradient(circle,rgba(255,224,189,.55) 0%,rgba(217,119,87,0) 70%);
+  }
+  .bot.is-cruise{animation:botBob 1.5s ease-in-out infinite}
+  @keyframes botBob{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+  .flight-skip{
+    position:absolute;right:20px;bottom:20px;z-index:4;
+    background:rgba(246,241,232,.08);color:#f6f1e8;border:1px solid rgba(246,241,232,.3);
+    border-radius:999px;padding:9px 18px;cursor:pointer;
+    font-family:var(--sans);font-size:12.5px;letter-spacing:-.01em;
+    transition:background .25s var(--ease),color .25s var(--ease);
+  }
+  .flight-skip:hover{background:#f6f1e8;color:#141311}
   @keyframes enterOut{to{opacity:0;transform:translateY(-6%);visibility:hidden}}
 
   .reel{
@@ -811,7 +849,7 @@
   }
 </style>
 </head>
-<body>
+<body class="booting">
 
 <div class="enter" id="enter">
   <div class="enter-glow" id="enterGlow" aria-hidden="true"></div>
@@ -819,11 +857,20 @@
   <h2 class="enter-name"><span>Avinash</span><span>Reddy Pothireddy</span></h2>
   <p class="enter-line">Eight years keeping systems up. Agents that call a tool instead of guessing.</p>
   <button class="enter-go" id="enterGo" type="button">Enter the agent</button>
-  <div class="enter-picks">
-    <button type="button" data-preview="dimensions">1 · Dimensions</button>
-    <button type="button" data-preview="traveler">2 · Traveler</button>
-    <button type="button" data-preview="film">3 · Film</button>
+</div>
+
+<div class="boot" id="boot" aria-hidden="true">
+  <div class="boot-inner">
+    <div class="boot-pct"><span id="bootNum">0</span><i>%</i></div>
+    <div class="boot-bar"><span id="bootBar"></span></div>
   </div>
+</div>
+
+<div class="flight" id="flight" hidden aria-hidden="true">
+  <canvas id="flightCanvas"></canvas>
+  <div class="flight-wash" id="flightWash"></div>
+  <div class="bot" id="bot"></div>
+  <button class="flight-skip" id="flightSkip" type="button">Skip</button>
 </div>
 
 <div class="mobile-bar">
@@ -1658,7 +1705,10 @@ function closeCover(after){
   el.addEventListener('animationend', done, { once: true });
   setTimeout(done, 900);
 }
-function dismissEnter(){ closeCover(startSite); }
+function dismissEnter(){
+  if (lessMotion()){ closeCover(startSite); return; }
+  runFlight();
+}
 
 const CHAPTERS = [
   { id:'reliability', idx:'01', name:'Reliability', figure:'99.9', unit:'%', pct:99.9,
@@ -1746,6 +1796,179 @@ function openPreview(kind){
     else mountReel(kind);
   });
 }
+/* ══════════════════ BOOT LOADER + FLIGHT ══════════════════ */
+function lessMotion(){
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/* 1 → 100%, then hand over to the landing */
+function runBoot(){
+  const box = document.getElementById('boot');
+  const num = document.getElementById('bootNum');
+  const bar = document.getElementById('bootBar');
+  const release = () => {
+    document.body.classList.remove('booting');
+    if (box){ box.classList.add('is-out'); setTimeout(() => box.remove(), 650); }
+  };
+  if (!box || lessMotion()){ if (num) num.textContent = '100'; release(); return; }
+  const DUR = 1900, t0 = performance.now();
+  (function step(now){
+    const k = Math.min(1, (now - t0) / DUR);
+    const eased = 1 - Math.pow(1 - k, 3);          // ease-out
+    const pct = Math.round(eased * 100);
+    num.textContent = pct;
+    bar.style.width = eased * 100 + '%';
+    if (k < 1) requestAnimationFrame(step); else setTimeout(release, 180);
+  })(t0);
+}
+
+/* hard-cut worlds the bot flies through — abstract, no page content */
+const FLIGHT_STAGES = [
+  { t:0,    bg:'#141311', star:'#f6f1e8', speed:1.2, kind:'calm'   },
+  { t:620,  bg:'#0a0912', star:'#f6f1e8', speed:9,   kind:'warp',   flash:'#f6f1e8' },
+  { t:1500, bg:'#04121a', star:'#86d9ef', speed:15,  kind:'grid',   flash:'#86d9ef' },
+  { t:2320, bg:'#1b0b06', star:'#f0a87e', speed:19,  kind:'rings',  flash:'#d97757' },
+  { t:3120, bg:'#3a2415', star:'#ffdcb6', speed:24,  kind:'bloom',  flash:'#ffffff' },
+  { t:3760, bg:'#f4f1ea', star:'#cfc5b4', speed:2.5, kind:'land',   flash:'#ffffff' }
+];
+const FLIGHT_END = 4500;
+
+function runFlight(){
+  const enterEl = document.getElementById('enter');
+  const go = document.getElementById('enterGo');
+  const flight = document.getElementById('flight');
+  const bot = document.getElementById('bot');
+  const wash = document.getElementById('flightWash');
+  const cv = document.getElementById('flightCanvas');
+  const skip = document.getElementById('flightSkip');
+  if (!flight || !bot || !cv || !enterEl || !go){ closeCover(startSite); return; }
+  if (flight.dataset.on) return;
+  flight.dataset.on = '1';
+
+  let ended = false;
+  const finish = () => {
+    if (ended) return;
+    ended = true;
+    flight.remove();
+    if (enterEl.isConnected) enterEl.remove();
+    startSite();
+  };
+  if (skip) skip.addEventListener('click', finish);
+
+  // the button becomes the bot: start at its exact box
+  const r = go.getBoundingClientRect();
+  flight.hidden = false;
+  bot.style.left = r.left + 'px';
+  bot.style.top = r.top + 'px';
+  bot.style.width = r.width + 'px';
+  bot.style.height = r.height + 'px';
+  bot.style.borderRadius = '999px';
+  enterEl.classList.add('is-out');
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const S = 34;
+    bot.style.left = (window.innerWidth / 2 - S / 2) + 'px';
+    bot.style.top = (window.innerHeight / 2 - S / 2) + 'px';
+    bot.style.width = S + 'px';
+    bot.style.height = S + 'px';
+    bot.style.borderRadius = '50%';
+    setTimeout(() => bot.classList.add('is-cruise'), 760);
+  }));
+
+  // ── starfield warp ──
+  const ctx = cv.getContext('2d');
+  let dpr = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0;
+  const size = () => {
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  size();
+  window.addEventListener('resize', size);
+
+  const N = (window.innerWidth < 600) ? 170 : 300;
+  const stars = [];
+  const spawn = s => { s.x = (Math.random() - .5) * W * 2; s.y = (Math.random() - .5) * H * 2; s.z = Math.random() * 1000 + 40; };
+  for (let i = 0; i < N; i++){ const s = {}; spawn(s); stars.push(s); }
+
+  const F = 420;
+  let last = -1, flashAt = -1, flashCol = '#fff';
+  const t0 = performance.now();
+
+  (function frame(now){
+    if (ended) return;
+    const t = now - t0;
+    let i = 0;
+    while (i + 1 < FLIGHT_STAGES.length && t >= FLIGHT_STAGES[i + 1].t) i++;
+    const st = FLIGHT_STAGES[i];
+    if (i !== last){                       // hard cut
+      last = i;
+      if (st.flash){ flashAt = t; flashCol = st.flash; }
+    }
+    const cx = W / 2, cy = H / 2;
+
+    ctx.fillStyle = st.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // world accents
+    if (st.kind === 'grid'){
+      ctx.strokeStyle = 'rgba(134,217,239,.22)'; ctx.lineWidth = 1;
+      for (let k = 0; k < 14; k++){
+        const z = ((k * 90 + t * 0.35) % 1260) + 40;
+        const y = cy + (F * 150) / z;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      for (let k = -7; k <= 7; k++){
+        ctx.beginPath(); ctx.moveTo(cx + k * 40, cy); ctx.lineTo(cx + k * W * 0.3, H); ctx.stroke();
+      }
+    } else if (st.kind === 'rings'){
+      for (let k = 0; k < 6; k++){
+        const rr = ((t - st.t) * 0.75 + k * 150) % 950;
+        ctx.strokeStyle = 'rgba(217,119,87,' + (0.4 * (1 - rr / 950)).toFixed(3) + ')';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else if (st.kind === 'bloom'){
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.7);
+      g.addColorStop(0, 'rgba(255,240,220,' + Math.min(.85, (t - st.t) / 700).toFixed(3) + ')');
+      g.addColorStop(1, 'rgba(255,240,220,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+
+    // stars
+    ctx.strokeStyle = st.star; ctx.lineCap = 'round';
+    const fade = st.kind === 'land' ? Math.max(0, 1 - (t - st.t) / 600) : 1;
+    ctx.globalAlpha = fade;
+    for (const s of stars){
+      const pz = s.z;
+      s.z -= st.speed;
+      if (s.z < 20){ spawn(s); continue; }
+      const sx = cx + (s.x / s.z) * F, sy = cy + (s.y / s.z) * F;
+      const px = cx + (s.x / pz) * F, py = cy + (s.y / pz) * F;
+      if (sx < -60 || sx > W + 60 || sy < -60 || sy > H + 60){ continue; }
+      ctx.lineWidth = Math.max(0.6, (1 - s.z / 1040) * 2.6);
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // hard-cut flash
+    if (flashAt >= 0){
+      const fk = (t - flashAt) / 280;
+      if (fk < 1){ wash.style.background = flashCol; wash.style.opacity = String((1 - fk) * 0.85); }
+      else { wash.style.opacity = '0'; flashAt = -1; }
+    }
+
+    // landing: bot settles then dissolves
+    if (st.kind === 'land'){
+      const lk = Math.min(1, (t - st.t) / 600);
+      bot.style.opacity = String(1 - lk);
+    }
+
+    if (t < FLIGHT_END) requestAnimationFrame(frame); else finish();
+  })(t0);
+}
+
+runBoot();
 (function initEnter(){
   const el = document.getElementById('enter');
   const glow = document.getElementById('enterGlow');
@@ -1753,9 +1976,6 @@ function openPreview(kind){
   if (!el){ startSite(); return; }
   go.addEventListener('click', dismissEnter);
   el.addEventListener('click', e => { if (e.target === el) dismissEnter(); });
-  el.querySelectorAll('[data-preview]').forEach(btn => {
-    btn.addEventListener('click', e => { e.stopPropagation(); openPreview(btn.dataset.preview); });
-  });
   window.addEventListener('keydown', e => {
     if ((e.key === 'Enter' || e.key === 'Escape') && document.getElementById('enter')) dismissEnter();
   });
