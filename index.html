@@ -1885,8 +1885,8 @@ const T_INFL   = 1185;  /* the line inflates into the body */
 const T_FEAT_0 = 1055;  /* features start — overlaps the inflate on purpose */
 const T_FEAT_1 = 1430;
 const T_LAUNCH = 1150;  /* it starts flying */
-const T_SITE   = 4150;  /* the live site is revealed underneath */
-const T_DOCK   = 4310;  /* it breaks for the Chat tab */
+const T_SITE   = 4300;  /* the live site is revealed underneath */
+const T_DOCK   = 4460;  /* it breaks for the Chat tab */
 const DOCK_DUR = 980;
 const T_HAND   = T_DOCK + DOCK_DUR;  /* it has become the tab's pill */
 const FLIGHT_END = T_HAND + 320;
@@ -1910,11 +1910,25 @@ const mixRamp = (a, b, k) => a.map((c, i) => c.map((v, j) => lerp(v, b[i][j], k)
 const gradOf  = (ramp, a) => 'radial-gradient(118% 110% at 28% 20%,' + ramp.map((c, i) =>
   `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a.toFixed(3)}) ${STOPS[i]}%`).join(',') + ')';
 
-/* The journey is smooth scalars rather than hard cuts — cuts and full-screen
-   colour flashes are most of what made the old space read synthetic. */
-const SPEED_KEYS = [[0,.8],[1150,1.5],[1750,12],[2600,25],[3450,30],[3950,15],[4150,3],[4500,1]];
-const BG_KEYS = [[0,[20,19,17]],[1250,[10,10,20]],[2150,[7,10,24]],[2900,[16,10,28]],
-                 [3450,[26,15,24]],[3980,[58,42,34]],[4210,[244,241,234]]];
+/* ── the four dimensions it falls through ────────────────────────────────────
+   A single smooth curve can't give the sense of passing through somewhere,
+   which is the whole point. So: hard worlds, each with its own geometry,
+   palette and motion blur, cross-cut fast.
+   WORLD_HOLD is how much of the previous frame each world keeps. A partial
+   clear instead of a full one is what smears the streaks into real motion
+   blur — it is most of why the reference reads as speed rather than lines. */
+const W_T        = [0, 1950, 2760, 3460, 4250];   /* void · shaft · glitch · vortex · arrive */
+const XFADE      = 150;
+const WORLD_BG   = [[6,6,11],[3,5,8],[2,7,4],[9,2,10],[244,241,234]];
+const WORLD_HOLD = [1, .40, .52, .26, .55];
+const SPEED_KEYS = [[0,.8],[1150,1.6],[1950,17],[2760,25],[3460,31],[4250,10],[4500,1.5]];
+
+function worldAt(t){
+  let i = 0;
+  while (i + 1 < W_T.length && t >= W_T[i + 1]) i++;
+  const nx = i + 1 < W_T.length ? W_T[i + 1] : Infinity;
+  return { i, k: nx === Infinity ? 0 : clamp((t - (nx - XFADE)) / XFADE) };
+}
 function keyAt(keys, t){
   if (t <= keys[0][0]) return keys[0][1];
   for (let i = 0; i < keys.length - 1; i++){
@@ -1936,7 +1950,8 @@ function starCol(){
   for (let i = 0; i < STAR_WTS.length; i++){ a += STAR_WTS[i]; if (r < a) return STAR_COLS[i]; }
   return STAR_COLS[3];
 }
-const NEB_COLS = [[150,58,120],[44,96,132],[158,74,46],[92,62,146],[38,112,110]];
+const PAL_SHAFT  = { line:'150,220,230', frag:'195,246,246', ca:'40,200,210', cb:'120,160,255' };
+const PAL_GLITCH = { line:'120,210,120', frag:'192,255,150', ca:'70,255,120', cb:'232,255,70' };
 
 function runFlight(){
   const enterEl = document.getElementById('enter');
@@ -2003,66 +2018,53 @@ function runFlight(){
     s.z = Math.random() * 1200 + 60;
     s.m = Math.pow(Math.random(), 2.6);      /* magnitude: many faint, few bright */
     s.c = starCol();
-    s.par = .75 + Math.random() * .5;        /* depth layers drift at their own rate */
+    s.par = .75 + Math.random() * .5;
     s.tw = Math.random() * 6.283;
   };
   for (let i = 0; i < NSTARS; i++){ const s = {}; spawnStar(s); stars.push(s); }
 
-  /* volumetric nebula: additive cloud blobs at depth, not flat rings */
-  const clouds = [];
-  const spawnCloud = c => {
-    c.x = (Math.random() - .5) * W * 2.2;
-    c.y = (Math.random() - .5) * H * 2.2;
-    c.z = 400 + Math.random() * 1500;
-    c.r = 220 + Math.random() * 520;
-    c.c = NEB_COLS[(Math.random() * NEB_COLS.length) | 0];
-    c.a = .11 + Math.random() * .15;
-    c.par = .8 + Math.random() * .45;
+  /* the shaft: light fixed to the four walls of a receding corridor. Real
+     perspective, so the walls open past the camera instead of sliding by. */
+  const frags = [];
+  const newFrag = f => {
+    f = f || {};
+    f.wall = (Math.random() * 4) | 0;
+    f.u    = Math.random() * 2 - 1;
+    f.z    = Math.random() * 2200 + 80;
+    f.len  = .04 + Math.random() * .20;
+    f.th   = .010 + Math.random() * .026;
+    f.b    = .30 + Math.random() * .70;
+    return f;
   };
-  for (let i = 0; i < (small ? 11 : 19); i++){ const c = {}; spawnCloud(c); clouds.push(c); }
-  /* dark dust carves structure back out of the cloud */
-  const dust = [];
-  for (let i = 0; i < (small ? 4 : 7); i++){
-    const d = {}; spawnCloud(d); d.a = .3 + Math.random() * .3; dust.push(d);
-  }
+  for (let i = 0; i < (small ? 40 : 72); i++) frags.push(newFrag());
+  let tunZ = 0;
 
-  /* a planet passes: lit limb, hard terminator, thin atmosphere */
-  const planet = { fx:.92, fy:-.58, z:3000, R:1150 };
+  /* the vortex: streaks spiralling into the core */
+  const spir = [];
+  const newSpir = s => {
+    s = s || {};
+    s.a = Math.random() * 6.283;
+    s.r = .10 + Math.random() * 1.30;
+    s.v = .35 + Math.random() * .95;
+    s.l = .07 + Math.random() * .26;
+    s.b = .35 + Math.random() * .65;
+    return s;
+  };
+  for (let i = 0; i < (small ? 50 : 72); i++) spir.push(newSpir());
+  /* scratch reused every frame so the vortex allocates nothing */
+  const VSEG = 3;
+  const vbuf = new Float64Array(spir.length * (VSEG + 1) * 2);
+  const vtier = [[], [], [], []];
 
-  function drawNebula(t, speed, bg){
-    const env = Math.sin(Math.PI * clamp(seg(t, 1700, 4060)));
-    if (env <= .02) return;
-    ctx.globalCompositeOperation = 'lighter';
-    for (const c of clouds){
-      c.z -= speed * c.par;
-      if (c.z < 70){ spawnCloud(c); c.z += 1500; }
-      const sc = FOV / c.z, rr = c.r * sc;
-      if (rr < 10) continue;
-      const sx = cx + c.x * sc, sy = cy + c.y * sc;
-      if (sx < -rr || sx > W + rr || sy < -rr || sy > H + rr) continue;
-      const a = env * c.a * clamp(1 - c.z / 2200) * clamp(1 - rr / (Math.max(W, H) * 1.9));
-      if (a <= .003) continue;
-      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rr);
-      g.addColorStop(0,   `rgba(${c.c[0]},${c.c[1]},${c.c[2]},${a.toFixed(3)})`);
-      g.addColorStop(.55, `rgba(${c.c[0]},${c.c[1]},${c.c[2]},${(a * .36).toFixed(3)})`);
-      g.addColorStop(1,   `rgba(${c.c[0]},${c.c[1]},${c.c[2]},0)`);
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(sx, sy, rr, 0, 6.2832); ctx.fill();
-    }
-    ctx.globalCompositeOperation = 'source-over';
-    for (const d of dust){
-      d.z -= speed * d.par;
-      if (d.z < 70){ spawnCloud(d); d.a = .3 + Math.random() * .3; d.z += 1500; }
-      const sc = FOV / d.z, rr = d.r * sc * .8;
-      if (rr < 14) continue;
-      const sx = cx + d.x * sc, sy = cy + d.y * sc;
-      const a = env * d.a * clamp(1 - d.z / 1700) * .5;
-      if (a <= .004) continue;
-      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rr);
-      g.addColorStop(0, `rgba(${bg[0]|0},${bg[1]|0},${bg[2]|0},${a.toFixed(3)})`);
-      g.addColorStop(1, `rgba(${bg[0]|0},${bg[1]|0},${bg[2]|0},0)`);
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(sx, sy, rr, 0, 6.2832); ctx.fill();
+  /* state advances once per frame, never per draw — otherwise a world drawn
+     twice during a cross-cut would run at double speed */
+  function stepWorlds(speed){
+    tunZ += speed;
+    for (const f of frags){ f.z -= speed; if (f.z < 60){ newFrag(f); f.z += 2200; } }
+    for (const s of spir){
+      s.r -= speed * .00062 * s.v;
+      s.a += .011 * s.v;
+      if (s.r < .04){ newSpir(s); s.r = 1.34; }
     }
   }
 
@@ -2081,9 +2083,7 @@ function runFlight(){
       br = clamp(br * (1 + .22 * Math.sin(t / (260 + s.tw * 90) + s.tw)));
       const c = s.c;
       const psc = FOV / pz, pxs = cx + s.x * psc, pys = cy + s.y * psc;
-      const len = Math.hypot(sx - pxs, sy - pys);
-      if (len > 2.2){
-        /* two strokes make a tapered streak without a gradient per star */
+      if (Math.hypot(sx - pxs, sy - pys) > 2.2){
         ctx.lineWidth = Math.max(.7, near * 1.9);
         ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(br * .32).toFixed(3)})`;
         ctx.beginPath(); ctx.moveTo(pxs, pys); ctx.lineTo(sx, sy); ctx.stroke();
@@ -2094,80 +2094,172 @@ function runFlight(){
         const rad = Math.max(.5, near * 1.5 + s.m * 1.1);
         ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${br.toFixed(3)})`;
         ctx.beginPath(); ctx.arc(sx, sy, rad, 0, 6.2832); ctx.fill();
-        if (s.m > .84){                      /* bright ones get a halo and a glint */
+        if (s.m > .84){
           const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rad * 7);
           g.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${(br * .45).toFixed(3)})`);
           g.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
           ctx.fillStyle = g;
           ctx.beginPath(); ctx.arc(sx, sy, rad * 7, 0, 6.2832); ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(br * .32).toFixed(3)})`;
-          ctx.lineWidth = .7;
-          ctx.beginPath();
-          ctx.moveTo(sx - rad * 4.4, sy); ctx.lineTo(sx + rad * 4.4, sy);
-          ctx.moveTo(sx, sy - rad * 4.4); ctx.lineTo(sx, sy + rad * 4.4);
-          ctx.stroke();
         }
       }
     }
   }
 
-  function drawPlanet(t, speed){
-    planet.z -= speed * .55;          /* it is massive and far, so it drifts slowly */
-    /* fade as it passes rather than cutting out when it gets close */
-    const env = Math.sin(Math.PI * clamp(seg(t, 2150, 4100))) * clamp((planet.z - 180) / 420);
-    if (env <= .02) return;
-    const sc = FOV / planet.z, rr = planet.R * sc;
-    if (rr < 14) return;
-    const sx = cx + planet.fx * W * sc, sy = cy + planet.fy * H * sc;
-    /* atmosphere */
-    const h = ctx.createRadialGradient(sx, sy, rr * .9, sx, sy, rr * 1.18);
-    h.addColorStop(0,   'rgba(150,196,230,0)');
-    h.addColorStop(.42, `rgba(150,196,230,${(.28 * env).toFixed(3)})`);
-    h.addColorStop(1,   'rgba(150,196,230,0)');
-    ctx.fillStyle = h;
-    ctx.beginPath(); ctx.arc(sx, sy, rr * 1.18, 0, 6.2832); ctx.fill();
-    /* disc, lit from upper-left, terminator falling off fast */
-    ctx.save();
-    ctx.beginPath(); ctx.arc(sx, sy, rr, 0, 6.2832); ctx.clip();
-    const lx = sx - rr * .46, ly = sy - rr * .5;
-    const g = ctx.createRadialGradient(lx, ly, rr * .04, lx, ly, rr * 1.72);
-    g.addColorStop(0,   `rgba(226,186,150,${env.toFixed(3)})`);
-    g.addColorStop(.30, `rgba(186,142,110,${env.toFixed(3)})`);
-    g.addColorStop(.52, `rgba(116,84,68,${env.toFixed(3)})`);
-    g.addColorStop(.63, `rgba(40,30,30,${env.toFixed(3)})`);
-    g.addColorStop(1,   `rgba(10,9,12,${env.toFixed(3)})`);
-    ctx.fillStyle = g;
-    ctx.fillRect(sx - rr, sy - rr, rr * 2, rr * 2);
-    ctx.globalAlpha = .10 * env;             /* soft bands so it isn't a plain ball */
-    for (let i = 0; i < 3; i++){
-      ctx.fillStyle = i % 2 ? 'rgb(60,44,38)' : 'rgb(214,176,142)';
-      ctx.beginPath();
-      ctx.ellipse(sx, sy - rr * .3 + i * rr * .33, rr * 1.02, rr * (.10 + i * .02), 0, 0, 6.2832);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    ctx.restore();
-    /* rim light on the lit limb */
-    ctx.strokeStyle = `rgba(236,228,214,${(.7 * env).toFixed(3)})`;
-    ctx.lineWidth = Math.max(1, rr * .013);
-    ctx.beginPath(); ctx.arc(sx, sy, rr * .995, Math.PI * 1.08, Math.PI * 1.96); ctx.stroke();
+  /* 1 — the void: almost nothing, and a huge soft corona around the dark */
+  function drawVoid(t, a, speed){
+    drawStars(t, speed * .4, a);
+    const R = Math.max(W, H) * .62;
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(cx, cy, R * .50, cx, cy, R * 1.04);
+    g.addColorStop(0,   'rgba(0,0,0,0)');
+    g.addColorStop(.38, `rgba(78,44,96,${(.30 * a).toFixed(3)})`);
+    g.addColorStop(.58, `rgba(152,78,58,${(.26 * a).toFixed(3)})`);
+    g.addColorStop(.78, `rgba(52,104,138,${(.24 * a).toFixed(3)})`);
+    g.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
   }
 
-  function drawArrival(t){
-    const a = Math.sin(Math.PI * clamp(seg(t, 3640, 4270))) * .9;
-    if (a <= .01) return;
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .78);
-    g.addColorStop(0,   `rgba(255,246,232,${a.toFixed(3)})`);
-    g.addColorStop(.35, `rgba(255,240,222,${(a * .5).toFixed(3)})`);
-    g.addColorStop(1,   'rgba(255,238,220,0)');
+  /* 2 & 3 — the shaft. chroma > 0 splits every fragment red/blue, which is
+     what gives the glitch world its torn, mis-registered look. */
+  function drawShaft(a, pal, chroma){
+    const HW = W * .54, HH = H * .54;
+    for (let i = 0; i < 13; i++){
+      const z = ((i * 185 - tunZ) % 2405 + 2405) % 2405 + 70;
+      const s = FOV / z, w2 = HW * s, h2 = HH * s;
+      if (w2 < 3) continue;
+      const near = clamp(1 - z / 2405);
+      ctx.strokeStyle = `rgba(${pal.line},${(.17 * near * a).toFixed(3)})`;
+      ctx.lineWidth = Math.max(.6, near * 1.7);
+      ctx.strokeRect(cx - w2, cy - h2, w2 * 2, h2 * 2);
+    }
+    if (chroma) ctx.globalCompositeOperation = 'lighter';
+    for (const f of frags){
+      const s = FOV / f.z, w2 = HW * s, h2 = HH * s;
+      if (w2 < 2) continue;
+      const near = clamp(1 - f.z / 2405);
+      const br = f.b * near * a;
+      if (br < .02) continue;
+      let x, y, ww, hh;
+      if (f.wall < 2){
+        ww = Math.max(1, f.len * w2 * 2); hh = Math.max(1, f.th * h2 * 2);
+        x = cx + f.u * w2 - ww / 2;
+        y = (f.wall === 0 ? cy - h2 : cy + h2) - hh / 2;
+      } else {
+        hh = Math.max(1, f.len * h2 * 2); ww = Math.max(1, f.th * w2 * 2);
+        y = cy + f.u * h2 - hh / 2;
+        x = (f.wall === 2 ? cx - w2 : cx + w2) - ww / 2;
+      }
+      if (x < -260 || x > W + 260 || y < -260 || y > H + 260) continue;
+      if (chroma){
+        const d = chroma * (1 + near * 2.4);
+        ctx.fillStyle = `rgba(${pal.ca},${(br * .75).toFixed(3)})`; ctx.fillRect(x - d, y, ww, hh);
+        ctx.fillStyle = `rgba(${pal.cb},${(br * .75).toFixed(3)})`; ctx.fillRect(x + d, y, ww, hh);
+        ctx.fillStyle = `rgba(255,255,255,${(br * .60).toFixed(3)})`; ctx.fillRect(x, y, ww, hh);
+      } else {
+        ctx.fillStyle = `rgba(${pal.frag},${br.toFixed(3)})`;
+        ctx.fillRect(x, y, ww, hh);
+      }
+    }
+    if (chroma) ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* 3 — datamosh on top: the frame sliced and shoved sideways, plus block noise */
+  function glitchPass(a){
+    const n = 2 + (Math.random() * 3 | 0);   /* each one is a canvas-to-self copy */
+    for (let i = 0; i < n; i++){
+      const y = Math.random() * (H - 40), h = 4 + Math.random() * 26;
+      const dx = (Math.random() * 2 - 1) * 80 * a;
+      ctx.drawImage(cv, 0, y * dpr, W * dpr, h * dpr, dx, y, W, h);
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    const cols = ['120,255,140', '255,240,90', '90,255,225'];
+    const nb = 7 + (Math.random() * 13 | 0);
+    for (let i = 0; i < nb; i++){
+      ctx.fillStyle = `rgba(${cols[(Math.random() * 3) | 0]},${((.12 + Math.random() * .3) * a).toFixed(3)})`;
+      ctx.fillRect(Math.random() * W, Math.random() * H, 6 + Math.random() * 72, 3 + Math.random() * 15);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* 4 — pulled into the core. Every streak is drawn three times, offset red
+     and blue around a white centre: chromatic aberration, done additively. */
+  function drawVortex(t, a){
+    const R = Math.hypot(W, H) * .58;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    /* Each streak sweeps its whole arc in one path — a straight chord per frame
+       piles up into a comb of copies instead of a continuous ribbon. Streaks are
+       bucketed by depth so one path per colour per tier covers all of them:
+       12 stroke calls a frame rather than three per streak. */
+    const SEG = VSEG, TIERS = 4, STRIDE = (SEG + 1) * 2;
+    for (let i = 0; i < TIERS; i++) vtier[i].length = 0;
+    for (const s of spir){
+      if (s.r > 1.24) continue;
+      vtier[Math.min(TIERS - 1, Math.max(0, ((1.3 - s.r) / 1.3 * TIERS) | 0))].push(s);
+    }
+    for (let ti = 0; ti < TIERS; ti++){
+      const list = vtier[ti];
+      if (!list.length) continue;
+      const m = (ti + .5) / TIERS * 1.3;
+      const br = a * m * .46;
+      if (br < .015) continue;
+      ctx.lineWidth = Math.max(1, m * 5);
+      const d = 2 + m * 4.5;
+      let np = 0;
+      for (const s of list){
+        for (let q = 0; q <= SEG; q++){
+          const f = q / SEG, rr = (s.r - s.l * f) * R, aa = s.a + s.l * f * 2.6;
+          vbuf[np++] = cx + Math.cos(aa) * rr;
+          vbuf[np++] = cy + Math.sin(aa) * rr;
+        }
+      }
+      for (let c = 0; c < 3; c++){
+        const off = c === 0 ? d : c === 1 ? -d : 0;
+        ctx.strokeStyle = c === 0 ? `rgba(255,46,88,${br.toFixed(3)})`
+                        : c === 1 ? `rgba(58,168,255,${br.toFixed(3)})`
+                        :           `rgba(255,236,246,${(br * .8).toFixed(3)})`;
+        ctx.beginPath();
+        for (let i = 0; i < np; i += STRIDE){
+          ctx.moveTo(vbuf[i] + off, vbuf[i + 1]);
+          for (let q = 1; q <= SEG; q++) ctx.lineTo(vbuf[i + q * 2] + off, vbuf[i + q * 2 + 1]);
+        }
+        ctx.stroke();
+      }
+    }
+    const core = clamp(seg(t, W_T[3], W_T[4]));
+    const cr = Math.max(W, H) * (.05 + core * core * .34);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr);
+    g.addColorStop(0,   `rgba(255,255,255,${(.70 * a).toFixed(3)})`);
+    g.addColorStop(.30, `rgba(255,226,240,${(.28 * a).toFixed(3)})`);
+    g.addColorStop(1,   'rgba(255,200,230,0)');
+    /* only the glow's own box, not the whole screen — a full-frame additive
+       gradient every frame is the single most expensive thing here */
+    ctx.fillStyle = g;
+    const gx = Math.max(0, cx - cr), gy = Math.max(0, cy - cr);
+    ctx.fillRect(gx, gy, Math.min(W, cx + cr) - gx, Math.min(H, cy + cr) - gy);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* 5 — out the other side, the blowout falling away onto the page */
+  function drawArrive(t, a){
+    const b = (1 - clamp(seg(t, W_T[4] - 160, W_T[4] + 300))) * a;
+    if (b <= .01) return;
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .9);
+    g.addColorStop(0, `rgba(255,255,255,${(.9 * b).toFixed(3)})`);
+    g.addColorStop(1, 'rgba(255,240,225,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    const s2 = ctx.createLinearGradient(0, cy, W, cy);   /* anamorphic streak */
-    s2.addColorStop(0, 'rgba(255,240,220,0)');
-    s2.addColorStop(.5, `rgba(255,248,236,${(a * .5).toFixed(3)})`);
-    s2.addColorStop(1, 'rgba(255,240,220,0)');
-    ctx.fillStyle = s2;
-    const hh = Math.max(2.4, H * .008);
-    ctx.fillRect(0, cy - hh / 2, W, hh);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function drawWorld(i, t, a, speed){
+    if (a <= .01) return;
+    if      (i === 0) drawVoid(t, a, speed);
+    else if (i === 1) drawShaft(a, PAL_SHAFT, 0);
+    else if (i === 2){ drawShaft(a, PAL_GLITCH, 2.5); glitchPass(a); }
+    else if (i === 3) drawVortex(t, a);
+    else              drawArrive(t, a);
   }
 
   /* the body's shading, interpolated: bright line → lit sphere → the tab's pill */
@@ -2213,15 +2305,19 @@ function runFlight(){
     const t = now - t0;
     const dt = clamp((t - prevT) / 1000, .001, .034); prevT = t;
     const speed = keyAt(SPEED_KEYS, t);
-    const bg = keyAt(BG_KEYS, t);
 
-    /* ── space ── */
-    ctx.fillStyle = `rgb(${bg[0]|0},${bg[1]|0},${bg[2]|0})`;
+    /* ── whichever dimension we are in ── */
+    const wv = worldAt(t);
+    const wj = Math.min(wv.i + 1, WORLD_BG.length - 1);
+    const bgA = WORLD_BG[wv.i], bgB = WORLD_BG[wj];
+    /* a partial clear: whatever is left of the last frame IS the motion blur */
+    ctx.globalAlpha = lerp(WORLD_HOLD[wv.i], WORLD_HOLD[wj], wv.k);
+    ctx.fillStyle = `rgb(${lerp(bgA[0],bgB[0],wv.k)|0},${lerp(bgA[1],bgB[1],wv.k)|0},${lerp(bgA[2],bgB[2],wv.k)|0})`;
     ctx.fillRect(0, 0, W, H);
-    drawNebula(t, speed, bg);
-    drawStars(t, speed, 1 - smooth(seg(t, 3900, 4190)));
-    drawPlanet(t, speed);
-    drawArrival(t);
+    ctx.globalAlpha = 1;
+    stepWorlds(speed);
+    drawWorld(wv.i, t, 1 - wv.k, speed);
+    if (wv.k > 0) drawWorld(wj, t, wv.k, speed);
 
     /* ── the box: pill → line → body → tab pill ── */
     let bw, bh, bx, by, land = 0;
@@ -2311,8 +2407,9 @@ function runFlight(){
       if (t > T_LAUNCH){
         const ph = (t - T_LAUNCH) / 1000;
         const launch = smooth(seg(t, T_LAUNCH, T_LAUNCH + 450));
-        const tx = ((cx - homeCx) + Math.sin(ph * 1.85) * W * .17 + Math.sin(ph * 4.3) * W * .052) * launch;
-        const ty = ((cy - homeCy) + Math.cos(ph * 1.55) * H * .11 + Math.sin(ph * 3.05) * H * .036) * launch;
+        const wk = 1 - .78 * clamp(seg(t, 2700, 3900));   /* the vortex pulls it in */
+        const tx = ((cx - homeCx) + (Math.sin(ph * 1.85) * W * .17 + Math.sin(ph * 4.3) * W * .052) * wk) * launch;
+        const ty = ((cy - homeCy) + (Math.cos(ph * 1.55) * H * .11 + Math.sin(ph * 3.05) * H * .036) * wk) * launch;
         const ax = (tx - px) * 40 - vx * 8.2, ay = (ty - py) * 40 - vy * 8.2;
         vx += ax * dt; vy += ay * dt; px += vx * dt; py += vy * dt;
         jigV += (-jig * 150 - jigV * 7.4 + Math.hypot(ax, ay) * .0006) * dt;
