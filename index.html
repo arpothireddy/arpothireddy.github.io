@@ -372,6 +372,58 @@
   .arch-foot{font-size:12px;color:var(--ink-2);line-height:1.5;margin-top:13px}
   .arch-foot a{color:var(--clay-deep);font-weight:500;border-bottom:1px solid var(--clay)}
 
+  /* ─────────── Projects ─────────── */
+  .proj-wrap{display:flex;flex-direction:column;gap:12px;max-width:680px;margin-top:2px}
+  .proj-lead{font-size:13.5px;color:var(--ink-2);line-height:1.6;margin:0 0 2px;max-width:58ch}
+  .proj-lead b{color:var(--ink);font-weight:600}
+  .proj-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:18px;
+    padding:16px 18px 15px;display:flex;flex-direction:column;gap:9px;
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset;
+    animation:rise .62s cubic-bezier(.32,.72,0,1) both;
+    transition:transform .4s cubic-bezier(.32,.72,0,1),box-shadow .4s cubic-bezier(.32,.72,0,1),border-color .25s ease;
+  }
+  .proj-card:nth-child(2){animation-delay:.04s}
+  .proj-card:nth-child(3){animation-delay:.1s}
+  .proj-card:nth-child(4){animation-delay:.16s}
+  .proj-card:nth-child(5){animation-delay:.22s}
+  @media(hover:hover){
+    .proj-card:hover{transform:translateY(-3px);border-color:#e6d4c6;box-shadow:0 18px 36px -26px rgba(41,38,31,.55)}
+  }
+  .proj-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .proj-idx{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--ink-3)}
+  .proj-kind{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--clay-deep)}
+  .proj-name{font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1.15;color:var(--ink);margin:0}
+  .proj-blurb{font-size:13.5px;color:var(--ink-2);line-height:1.58;margin:0}
+  .proj-blurb b{color:var(--ink);font-weight:600}
+  .proj-pipe{display:flex;flex-wrap:wrap;align-items:center;gap:5px 0;margin-top:2px}
+  .proj-stage{
+    font-family:var(--mono);font-size:11px;color:var(--ink);
+    background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 9px;
+  }
+  .proj-stage.end{background:var(--clay-tint);border-color:#ecd9cd;color:var(--clay-deep)}
+  .proj-chev{color:var(--ink-3);font-size:12px;padding:0 5px;line-height:1}
+  .proj-tools{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);letter-spacing:.01em}
+  .proj-tools b{font-weight:500;color:var(--clay-deep)}
+  .proj-stack{display:flex;flex-wrap:wrap;gap:6px}
+  .proj-chip{
+    font-family:var(--mono);font-size:11px;color:var(--ink-2);
+    background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:4px 8px;
+  }
+  .proj-watch{
+    display:inline-flex;align-items:center;gap:8px;width:fit-content;
+    font-size:12.5px;color:var(--ink-2);
+    background:#eef4ea;border:1px solid #d6e6cb;border-radius:999px;padding:5px 11px 5px 9px;
+  }
+  .proj-watch b{font-family:var(--mono);font-weight:500;font-size:11.5px;color:#5c7a3f}
+  .proj-links{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:2px}
+  .proj-links a,.proj-jump{
+    font-family:var(--sans);font-size:13px;font-weight:600;color:var(--clay-deep);
+    background:none;border:none;padding:0;cursor:pointer;text-decoration:none;
+    border-bottom:1px solid transparent;transition:border-color .15s;
+  }
+  .proj-links a:hover,.proj-jump:hover{border-bottom-color:var(--clay)}
+
   /* follow-up suggestion chips after an answer */
   .followups{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 4px 43px;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
   .followup-chip{
@@ -491,8 +543,14 @@
     .conversation{padding:22px 18px 10px;min-width:0}
     .composer{padding:12px 18px 18px;min-width:0}
     .msg{max-width:100%}
-    .mode-toggle{justify-content:center;gap:5px}
-    .mode-btn{font-size:11px;padding:6px 9px}
+    .mode-toggle{justify-content:center;gap:6px}
+    .mode-btn{font-size:11.5px;padding:7px 10px}
+    /* Phones: two balanced rows (3 + 2), never a lone last pill. */
+    @media(max-width:430px){
+      .mode-btn{flex:1 1 calc(33.33% - 6px);text-align:center;padding:7px 6px;font-size:11.5px}
+    }
+    .proj-name{font-size:20px}
+    .proj-card{padding:14px 14px 13px}
   }
   @media(prefers-reduced-motion:reduce){
     *{animation-duration:.001s!important;transition-duration:.01s!important;scroll-behavior:auto!important}
@@ -604,6 +662,7 @@
         <button class="mode-btn" data-mode="jd" type="button">JD Fit Analyzer</button>
         <button class="mode-btn" data-mode="slo" type="button">SLO Sandbox</button>
         <button class="mode-btn" data-mode="arch" type="button">Architecture</button>
+        <button class="mode-btn" data-mode="projects" type="button">Projects</button>
       </div>
       <div class="input-row" id="chatRow">
         <input id="termInput" type="text" placeholder="Ask about experience, AI/agent work, a specific tool…" autocomplete="off">
@@ -994,7 +1053,7 @@ function sloCardHtml(sloPct, windowDays, c){
       <div class="slo-bar"><button class="slo-copy" type="button">Copy JSON</button></div>
       <pre class="slo-code">${esc(mcp)}</pre>
     </div>
-    <div class="slo-foot">Same SRE math, exposed as an MCP tool an LLM agent can call — the bridge between reliability engineering and agentic ops. <a href="https://github.com/arpothireddy" target="_blank" rel="noopener">See my MCP work →</a></div>
+    <div class="slo-foot">Same SRE math as <a href="https://github.com/arpothireddy/sre-toolkit-mcp" target="_blank" rel="noopener">sre-toolkit-mcp</a> — agents call a verified tool instead of guessing the burn rate.</div>
   </div>`;
 }
 
@@ -1074,7 +1133,7 @@ function archHtml(){
       </div>
     </div>
 
-    <div class="arch-foot">The MCP server here is the same pattern behind the SLO Sandbox — deterministic math, typed tools, agent on top. <a href="https://github.com/arpothireddy" target="_blank" rel="noopener">See my MCP work &#8594;</a></div>
+    <div class="arch-foot">The MCP server here is the same pattern behind the SLO Sandbox — deterministic math, typed tools, agent on top. <a href="https://github.com/arpothireddy/sre-toolkit-mcp" target="_blank" rel="noopener">sre-toolkit-mcp &#8594;</a></div>
   </div>`;
 }
 
@@ -1086,6 +1145,81 @@ function showArchitecture(){
   }
   archShown = true;
   addMsg('Architecture', 'agent', archHtml());
+}
+
+/* ══════════════════════ PROJECTS ══════════════════════ */
+function chipRow(items){
+  return items.map(s => `<span class="proj-chip">${esc(s)}</span>`).join('');
+}
+function pipeRow(stages){
+  return `<div class="proj-pipe">${stages.map((s,i) => {
+    const cls = i === stages.length - 1 ? 'proj-stage end' : 'proj-stage';
+    const chev = i < stages.length - 1 ? '<span class="proj-chev" aria-hidden="true">→</span>' : '';
+    return `<span class="${cls}">${esc(s)}</span>${chev}`;
+  }).join('')}</div>`;
+}
+function projectsHtml(){
+  return `<div class="proj-wrap">
+    <p class="proj-lead">Four builds on one idea: a <b>deterministic core</b>, an agent on top, and a human when it matters.</p>
+
+    <article class="proj-card">
+      <div class="proj-top"><span class="proj-idx">01</span><span class="proj-kind">Agent pipeline</span></div>
+      <h3 class="proj-name">job-agent</h3>
+      <p class="proj-blurb">Self-hosted multi-stage system: discovery → scoring → résumé tailoring → form automation across Greenhouse, Ashby, Lever, Workday, and iCIMS, with human-supervised final submission.</p>
+      ${pipeRow(['Discover','Score','Tailor','Fill','Human approve'])}
+      <div class="proj-stack">${chipRow(['FastAPI','PostgreSQL','Playwright','Gemini','Claude','Ollama / Qwen2.5','GitOps'])}</div>
+    </article>
+
+    <article class="proj-card">
+      <div class="proj-top"><span class="proj-idx">02</span><span class="proj-kind">MCP tools</span></div>
+      <h3 class="proj-name">sre-toolkit-mcp</h3>
+      <p class="proj-blurb">FastMCP server exposing deterministic reliability math — error budget, burn rate, blast radius, composite SLO — so agents call verified calculations instead of guessing.</p>
+      <div class="proj-tools"><b>error_budget</b> · <b>burn_rate</b> · <b>blast_radius</b> · <b>composite_slo</b></div>
+      <div class="proj-stack">${chipRow(['FastMCP','Error budgets','Burn rate','pytest','GitHub Actions'])}</div>
+      <div class="proj-links">
+        <a href="https://github.com/arpothireddy/sre-toolkit-mcp" target="_blank" rel="noopener">GitHub →</a>
+        <button class="proj-jump" type="button" data-jump="slo">Try the SLO Sandbox →</button>
+      </div>
+    </article>
+
+    <article class="proj-card">
+      <div class="proj-top"><span class="proj-idx">03</span><span class="proj-kind">This site</span></div>
+      <h3 class="proj-name">Portfolio agent</h3>
+      <p class="proj-blurb">Claude-styled recruiter agent with chat and JD-fit on a FastAPI / Groq backend, deployed to Cloud Run, plus the SLO Sandbox and architecture diagram. You’re using it.</p>
+      <div class="proj-stack">${chipRow(['FastAPI','Groq','Cloud Run','GitHub Pages'])}</div>
+      <div class="proj-links">
+        <a href="https://github.com/arpothireddy/portfolio_backend" target="_blank" rel="noopener">Backend →</a>
+        <button class="proj-jump" type="button" data-jump="chat">Ask the agent →</button>
+      </div>
+    </article>
+
+    <article class="proj-card">
+      <div class="proj-top"><span class="proj-idx">04</span><span class="proj-kind">Product</span></div>
+      <h3 class="proj-name">Assay</h3>
+      <p class="proj-blurb">Fair market value for pre-owned luxury watches from live dealer inventory — not invented by a model. Deterministic Decimal arithmetic; LLMs only improve the conversation. Companion <b>assay-watch</b> probes <b>/health</b> every 5 minutes via GitHub Actions and Pushover-alerts when the ledger isn’t ready.</p>
+      <div class="proj-watch"><span class="dot" aria-hidden="true"></span><span>Outside-in watch · every 5 min · GHA → Pushover</span></div>
+      <div class="proj-stack">${chipRow(['Expo','FastAPI','LangGraph','FastMCP','Cloud Run','GHA watcher'])}</div>
+      <div class="proj-links">
+        <a href="https://watchassay.com" target="_blank" rel="noopener">watchassay.com →</a>
+      </div>
+    </article>
+  </div>`;
+}
+let projectsShown = false;
+function showProjects(){
+  if (projectsShown){
+    const ex = conv.querySelector('.proj-wrap');
+    if (ex) ex.scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
+  projectsShown = true;
+  const el = addMsg('Projects', 'agent', projectsHtml());
+  el.querySelectorAll('[data-jump]').forEach(node => {
+    node.addEventListener('click', e => {
+      e.preventDefault();
+      setMode(node.dataset.jump);
+    });
+  });
 }
 
 /* ══════════════════════ EVENTS ══════════════════════ */
@@ -1131,6 +1265,7 @@ function setMode(m){
       mode==='chat' ? "This agent answers from Avinash's résumé — recruiters, ask away."
     : mode==='jd'   ? "Paste a job description to see how Avinash's background fits."
     : mode==='slo'  ? "Live SRE math — set an SLO target and window to model the error budget and burn-rate alerts."
+    : mode==='projects' ? "Side projects bridging SRE and agentic engineering — ask the chat about any of them."
     :                 "A production pattern I build — telemetry → MCP context broker → human-approved agent remediation.";
   const shown = mode==='chat' ? chatRow : mode==='jd' ? jdRow : mode==='slo' ? sloRow : null;
   animatePanel(shown);
@@ -1139,6 +1274,7 @@ function setMode(m){
   else if (mode==='jd') jdInput.focus();
   else if (mode==='slo') sloTarget.focus();
   else if (mode==='arch') showArchitecture();
+  else if (mode==='projects') showProjects();
 }
 modeToggle.addEventListener('click', e=>{
   const btn = e.target.closest('.mode-btn');
@@ -1159,12 +1295,15 @@ const FOLLOWUP_POOL = [
   "How does he handle incident response?",
   "What's his cloud background (AWS/GCP)?",
   "Why should we hire him?",
-  "What certifications does he hold?"
+  "What certifications does he hold?",
+  "What's job-agent?",
+  "How does sre-toolkit-mcp work?",
+  "Tell me about Assay"
 ];
 const STARTERS = [
   "How does Avinash use MCP in SRE workflows?",
   "Summarize his cloud platform experience",
-  "Walk me through his AI agent projects",
+  "What side projects has he shipped lately?",
 ];
 function showStarters(){
   const wrap = document.createElement('div');
