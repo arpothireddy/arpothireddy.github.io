@@ -689,31 +689,39 @@
   body.booting .enter *{animation-play-state:paused!important}
   .enter{transition:opacity .5s var(--ease)}
 
-  /* ── Flight (Enter → bot → space → home) ── */
+  /* ── Flight (Enter → line → character → space → the Chat tab) ── */
   .flight{position:fixed;inset:0;z-index:95;overflow:hidden;background:#141311}
   .flight[hidden]{display:none}
   .flight canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .flight-wash{position:absolute;inset:0;opacity:0;pointer-events:none;background:#fff}
+  /* One element carries the whole morph: button → flat line → body → tab pill.
+     Nothing here cross-fades — JS interpolates the box, the fill and the
+     features on a single clock, so there is no seam to see. */
   .bot{
-    position:fixed;z-index:3;pointer-events:none;
+    position:fixed;z-index:3;pointer-events:none;box-sizing:border-box;
     display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(118% 110% at 28% 20%, #fff4e8 0%, #f6b98d 26%, #df8a5e 52%, #bf5c39 76%, #8e3b1f 100%);
-    box-shadow:
-      inset 0 -7px 14px rgba(84,26,9,.5),
-      inset 0 3px 9px rgba(255,238,220,.5),
-      0 0 24px rgba(217,119,87,.7),
-      0 0 86px rgba(217,119,87,.33);
-    transition:left .75s var(--ease),top .75s var(--ease),width .75s var(--ease),
-               height .75s var(--ease),border-radius .75s var(--ease),opacity .4s linear;
+    border:1px solid transparent;border-radius:999px;
+    transform-origin:50% 50%;will-change:transform,width,height;
   }
-  /* glossy visor — two warm lights sit behind the glass */
+  /* the button's own label, handed over so the swap is invisible */
+  .bot-label{
+    position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    text-align:center;white-space:nowrap;z-index:5;
+    font-family:var(--sans);font-size:15px;font-weight:500;letter-spacing:-.02em;color:#f6f1e8;
+  }
+  /* the sweep that runs along the line while it holds */
+  .bot-sheen{
+    position:absolute;top:0;width:30%;height:100%;z-index:4;border-radius:999px;
+    background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.95),rgba(255,255,255,0));
+    opacity:0;pointer-events:none;
+  }
+  /* glossy visor — opens from a line inside the body, the same move one size down */
   .bot-visor{
     position:relative;z-index:2;overflow:hidden;
     width:52%;height:29%;margin-top:-6%;border-radius:999px;
     display:flex;align-items:center;justify-content:center;gap:19%;
     background:linear-gradient(180deg,#43291e 0%,#140c08 52%,#2a1a12 100%);
     box-shadow:inset 0 1.5px 2px rgba(255,236,216,.45),inset 0 -2px 5px rgba(0,0,0,.65),0 1px 3px rgba(84,26,9,.55);
-    opacity:0;transition:opacity .45s var(--ease) .12s;
+    opacity:0;transform-origin:50% 50%;
   }
   .bot-visor::after{
     content:"";position:absolute;left:-34%;top:0;width:58%;height:100%;
@@ -724,24 +732,21 @@
     width:13%;height:30%;min-width:2.5px;min-height:3px;border-radius:999px;
     background:#ffd9ad;box-shadow:0 0 7px rgba(255,207,156,.95);
   }
-  /* specular highlight */
   .bot-spec{
     position:absolute;left:17%;top:11%;width:35%;height:27%;z-index:3;border-radius:50%;
     background:radial-gradient(circle,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 70%);
-    opacity:0;transition:opacity .45s var(--ease) .08s;
+    opacity:0;transform-origin:50% 50%;
   }
-  /* slow orbital ring */
   .bot-ring{
     position:absolute;left:50%;top:50%;width:172%;height:172%;z-index:1;border-radius:50%;
     border:1px solid rgba(255,214,178,.45);
-    opacity:0;transition:opacity .5s var(--ease) .2s;
+    opacity:0;
     animation:botRing 7s linear infinite;
   }
   @keyframes botRing{
-    from{transform:translate(-50%,-50%) rotateX(74deg) rotate(0deg)}
-    to{transform:translate(-50%,-50%) rotateX(74deg) rotate(360deg)}
+    from{transform:translate(-50%,-50%) rotateX(74deg) rotate(0deg) scale(var(--ring-s,1))}
+    to{transform:translate(-50%,-50%) rotateX(74deg) rotate(360deg) scale(var(--ring-s,1))}
   }
-  .bot.is-formed .bot-visor,.bot.is-formed .bot-spec,.bot.is-formed .bot-ring{opacity:1}
   /* the tab bar flags itself as the bot docks */
   .mode-btn.tab-hint{animation:tabHint .55s var(--ease)}
   @keyframes tabHint{0%,100%{transform:none}38%{transform:translateY(-7px)}}
@@ -905,8 +910,11 @@
 
 <div class="flight" id="flight" hidden aria-hidden="true">
   <canvas id="flightCanvas"></canvas>
-  <div class="flight-wash" id="flightWash"></div>
-  <div class="bot" id="bot"><span class="bot-ring"></span><span class="bot-spec"></span><span class="bot-visor"><i></i><i></i></span></div>
+  <div class="bot" id="bot">
+    <span class="bot-ring"></span><span class="bot-spec"></span>
+    <span class="bot-visor"><i></i><i></i></span>
+    <span class="bot-sheen"></span><span class="bot-label">Enter the agent</span>
+  </div>
   <button class="flight-skip" id="flightSkip" type="button">Skip</button>
 </div>
 
@@ -1859,192 +1867,463 @@ function runBoot(){
   })(t0);
 }
 
-/* hard-cut worlds the bot flies through — abstract, no page content */
-const FLIGHT_STAGES = [
-  { t:0,    bg:'#141311', star:'#f6f1e8', speed:1.2, kind:'calm'   },
-  { t:620,  bg:'#0a0912', star:'#f6f1e8', speed:9,   kind:'warp',   flash:'#f6f1e8' },
-  { t:1500, bg:'#04121a', star:'#86d9ef', speed:15,  kind:'grid',   flash:'#86d9ef' },
-  { t:2320, bg:'#1b0b06', star:'#f0a87e', speed:19,  kind:'rings',  flash:'#d97757' },
-  { t:3120, bg:'#3a2415', star:'#ffdcb6', speed:24,  kind:'bloom',  flash:'#ffffff' },
-  { t:3760, bg:'#f4f1ea', star:'#cfc5b4', speed:2.5, kind:'land',   flash:'#ffffff' }
-];
-const FLIGHT_END = 5700;
-const SITE_T = 3800;      // site is revealed under the bot
-const DOCK_T = 3960;      // bot breaks for the Chat tab
-const DOCK_DUR = 950;
-const HINT_T = DOCK_T + DOCK_DUR;
+/* ───────────────────────────────────────────────────────────────────────────
+   The intro is one unbroken morph on a single clock:
+
+     button → flat line → body → character → real space → the Chat tab's pill
+
+   Nothing cross-fades. The old version faded the button out while a separate
+   bot faded in and then popped its features on — three overlapping fades, which
+   is what read as a break. Here one element is interpolated the whole way: the
+   box, the fill colours, the features and the secondary motion all come off the
+   same rAF timeline, so there is no seam to see.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* beats, ms from the click */
+const T_LABEL  = 170;   /* the label clears */
+const T_SQ_0   = 150;   /* pill starts squeezing */
+const T_SQ_1   = 545;   /* …is now a flat line */
+const T_HOLD   = 775;   /* the line holds while a sweep runs along it */
+const T_INFL   = 1185;  /* the line inflates into the body */
+const T_FEAT_0 = 1055;  /* features start — overlaps the inflate on purpose */
+const T_FEAT_1 = 1430;
+const T_LAUNCH = 1150;  /* it starts flying */
+const T_SITE   = 4150;  /* the live site is revealed underneath */
+const T_DOCK   = 4310;  /* it breaks for the Chat tab */
+const DOCK_DUR = 980;
+const T_HAND   = T_DOCK + DOCK_DUR;  /* it has become the tab's pill */
+const FLIGHT_END = T_HAND + 320;
+
+const LINE_W = 124, LINE_H = 3, BODY_S = 52;
+
+const clamp   = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+const lerp    = (a, b, k) => a + (b - a) * k;
+const seg     = (t, a, b) => clamp((t - a) / (b - a));
+const eOut    = k => 1 - Math.pow(1 - k, 3);
+const eInOut  = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const smooth  = k => k * k * (3 - 2 * k);
+
+/* The fill is ONE radial gradient from start to finish — only its colours are
+   interpolated, so the line and the sphere are literally the same object. */
+const STOPS     = [0, 26, 52, 76, 100];
+const RAMP_LINE = [[255,255,255],[255,250,242],[255,232,208],[255,212,176],[250,198,154]];
+const RAMP_BODY = [[255,244,232],[246,185,141],[223,138,94],[191,92,57],[142,59,31]];
+const RAMP_TAB  = [[255,255,255],[255,255,255],[254,253,251],[252,250,247],[250,248,244]];
+const mixRamp = (a, b, k) => a.map((c, i) => c.map((v, j) => lerp(v, b[i][j], k)));
+const gradOf  = (ramp, a) => 'radial-gradient(118% 110% at 28% 20%,' + ramp.map((c, i) =>
+  `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a.toFixed(3)}) ${STOPS[i]}%`).join(',') + ')';
+
+/* The journey is smooth scalars rather than hard cuts — cuts and full-screen
+   colour flashes are most of what made the old space read synthetic. */
+const SPEED_KEYS = [[0,.8],[1150,1.5],[1750,12],[2600,25],[3450,30],[3950,15],[4150,3],[4500,1]];
+const BG_KEYS = [[0,[20,19,17]],[1250,[10,10,20]],[2150,[7,10,24]],[2900,[16,10,28]],
+                 [3450,[26,15,24]],[3980,[58,42,34]],[4210,[244,241,234]]];
+function keyAt(keys, t){
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 0; i < keys.length - 1; i++){
+    if (t < keys[i + 1][0]){
+      const k = smooth((t - keys[i][0]) / (keys[i + 1][0] - keys[i][0]));
+      const a = keys[i][1], b = keys[i + 1][1];
+      return Array.isArray(a) ? a.map((v, j) => lerp(v, b[j], k)) : lerp(a, b, k);
+    }
+  }
+  return keys[keys.length - 1][1];
+}
+
+/* real star colours: mostly faint yellow-white, a few blue giants, a few reds */
+const STAR_COLS = [[176,200,255],[214,228,255],[240,244,255],[255,250,236],
+                   [255,236,206],[255,214,176],[255,188,158]];
+const STAR_WTS  = [.05,.12,.20,.26,.19,.12,.06];
+function starCol(){
+  let r = Math.random(), a = 0;
+  for (let i = 0; i < STAR_WTS.length; i++){ a += STAR_WTS[i]; if (r < a) return STAR_COLS[i]; }
+  return STAR_COLS[3];
+}
+const NEB_COLS = [[150,58,120],[44,96,132],[158,74,46],[92,62,146],[38,112,110]];
 
 function runFlight(){
   const enterEl = document.getElementById('enter');
-  const go = document.getElementById('enterGo');
-  const flight = document.getElementById('flight');
-  const bot = document.getElementById('bot');
-  const wash = document.getElementById('flightWash');
-  const cv = document.getElementById('flightCanvas');
-  const skip = document.getElementById('flightSkip');
-  if (!flight || !bot || !cv || !enterEl || !go){ closeCover(startSite); return; }
+  const go      = document.getElementById('enterGo');
+  const flight  = document.getElementById('flight');
+  const bodyEl  = document.getElementById('bot');
+  const cv      = document.getElementById('flightCanvas');
+  const skip    = document.getElementById('flightSkip');
+  if (!flight || !bodyEl || !cv || !enterEl || !go){ closeCover(startSite); return; }
   if (flight.dataset.on) return;
   flight.dataset.on = '1';
+
+  const label = bodyEl.querySelector('.bot-label');
+  const sheen = bodyEl.querySelector('.bot-sheen');
+  const visor = bodyEl.querySelector('.bot-visor');
+  const spec  = bodyEl.querySelector('.bot-spec');
+  const ring  = bodyEl.querySelector('.bot-ring');
+  const ind   = document.querySelector('#modeToggle .mode-ind');
 
   let ended = false;
   const finish = () => {
     if (ended) return;
     ended = true;
+    if (ind){ ind.style.opacity = ''; ind.style.transition = ''; }
     flight.remove();
     if (enterEl.isConnected) enterEl.remove();
     startSite();
   };
   if (skip) skip.addEventListener('click', finish);
 
-  // the button becomes the bot: start at its exact box
+  /* Hand the button's exact box to the body, then hide the button outright.
+     At this instant the body is a pixel copy of it, so nothing cross-fades. */
   const r = go.getBoundingClientRect();
+  const box0 = { x:r.left, y:r.top, w:r.width, h:r.height };
+  const homeCx = box0.x + box0.w / 2, homeCy = box0.y + box0.h / 2;
   flight.hidden = false;
-  bot.style.left = r.left + 'px';
-  bot.style.top = r.top + 'px';
-  bot.style.width = r.width + 'px';
-  bot.style.height = r.height + 'px';
-  bot.style.borderRadius = '999px';
+  if (ind){ ind.style.transition = 'none'; ind.style.opacity = '0'; }
+  bodyEl.style.borderColor = 'rgba(246,241,232,.35)';
+  bodyEl.style.backgroundImage = gradOf(RAMP_LINE, 0);
+  bodyEl.style.left = box0.x + 'px'; bodyEl.style.top = box0.y + 'px';
+  bodyEl.style.width = box0.w + 'px'; bodyEl.style.height = box0.h + 'px';
+  go.style.visibility = 'hidden';
   enterEl.classList.add('is-out');
 
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const S = 52;
-    bot.style.left = (window.innerWidth / 2 - S / 2) + 'px';
-    bot.style.top = (window.innerHeight / 2 - S / 2) + 'px';
-    bot.style.width = S + 'px';
-    bot.style.height = S + 'px';
-    bot.style.borderRadius = '50%';
-    setTimeout(() => bot.classList.add('is-formed'), 700);
-  }));
-
-  // ── starfield warp ──
+  /* ── canvas ── */
   const ctx = cv.getContext('2d');
-  let dpr = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0;
+  let dpr = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0, cx = 0, cy = 0;
   const size = () => {
-    W = window.innerWidth; H = window.innerHeight;
+    W = window.innerWidth; H = window.innerHeight; cx = W / 2; cy = H / 2;
     cv.width = W * dpr; cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
   size();
   window.addEventListener('resize', size);
 
-  const N = (window.innerWidth < 600) ? 170 : 300;
+  const FOV = 420;
+  const small = window.innerWidth < 600;
+  const NSTARS = small ? 150 : 260;
+
   const stars = [];
-  const spawn = s => { s.x = (Math.random() - .5) * W * 2; s.y = (Math.random() - .5) * H * 2; s.z = Math.random() * 1000 + 40; };
-  for (let i = 0; i < N; i++){ const s = {}; spawn(s); stars.push(s); }
+  const spawnStar = s => {
+    s.x = (Math.random() - .5) * W * 2.4;
+    s.y = (Math.random() - .5) * H * 2.4;
+    s.z = Math.random() * 1200 + 60;
+    s.m = Math.pow(Math.random(), 2.6);      /* magnitude: many faint, few bright */
+    s.c = starCol();
+    s.par = .75 + Math.random() * .5;        /* depth layers drift at their own rate */
+    s.tw = Math.random() * 6.283;
+  };
+  for (let i = 0; i < NSTARS; i++){ const s = {}; spawnStar(s); stars.push(s); }
 
-  const F = 420;
-  let last = -1, flashAt = -1, flashCol = '#fff';
-  let revealed = false, hinted = false, dockTo = null;
-  let dockFrom = { dx:0, dy:0, bank:0 };
-
-  // where the Chat tab sits, relative to the bot's centred home
-  function tabTarget(){
-    const chat = document.querySelector('.mode-btn[data-mode="chat"]');
-    if (!chat) return { dx:0, dy:0 };
-    const r = chat.getBoundingClientRect();
-    if (!r.width) return { dx:0, dy:0 };
-    return { dx:(r.left + r.width / 2) - window.innerWidth / 2,
-             dy:(r.top + r.height / 2) - window.innerHeight / 2 };
+  /* volumetric nebula: additive cloud blobs at depth, not flat rings */
+  const clouds = [];
+  const spawnCloud = c => {
+    c.x = (Math.random() - .5) * W * 2.2;
+    c.y = (Math.random() - .5) * H * 2.2;
+    c.z = 400 + Math.random() * 1500;
+    c.r = 220 + Math.random() * 520;
+    c.c = NEB_COLS[(Math.random() * NEB_COLS.length) | 0];
+    c.a = .11 + Math.random() * .15;
+    c.par = .8 + Math.random() * .45;
+  };
+  for (let i = 0; i < (small ? 11 : 19); i++){ const c = {}; spawnCloud(c); clouds.push(c); }
+  /* dark dust carves structure back out of the cloud */
+  const dust = [];
+  for (let i = 0; i < (small ? 4 : 7); i++){
+    const d = {}; spawnCloud(d); d.a = .3 + Math.random() * .3; dust.push(d);
   }
-  // ripple across the tabs so the other modes get noticed
+
+  /* a planet passes: lit limb, hard terminator, thin atmosphere */
+  const planet = { fx:.92, fy:-.58, z:3000, R:1150 };
+
+  function drawNebula(t, speed, bg){
+    const env = Math.sin(Math.PI * clamp(seg(t, 1700, 4060)));
+    if (env <= .02) return;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const c of clouds){
+      c.z -= speed * c.par;
+      if (c.z < 70){ spawnCloud(c); c.z += 1500; }
+      const sc = FOV / c.z, rr = c.r * sc;
+      if (rr < 10) continue;
+      const sx = cx + c.x * sc, sy = cy + c.y * sc;
+      if (sx < -rr || sx > W + rr || sy < -rr || sy > H + rr) continue;
+      const a = env * c.a * clamp(1 - c.z / 2200) * clamp(1 - rr / (Math.max(W, H) * 1.9));
+      if (a <= .003) continue;
+      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rr);
+      g.addColorStop(0,   `rgba(${c.c[0]},${c.c[1]},${c.c[2]},${a.toFixed(3)})`);
+      g.addColorStop(.55, `rgba(${c.c[0]},${c.c[1]},${c.c[2]},${(a * .36).toFixed(3)})`);
+      g.addColorStop(1,   `rgba(${c.c[0]},${c.c[1]},${c.c[2]},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sx, sy, rr, 0, 6.2832); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    for (const d of dust){
+      d.z -= speed * d.par;
+      if (d.z < 70){ spawnCloud(d); d.a = .3 + Math.random() * .3; d.z += 1500; }
+      const sc = FOV / d.z, rr = d.r * sc * .8;
+      if (rr < 14) continue;
+      const sx = cx + d.x * sc, sy = cy + d.y * sc;
+      const a = env * d.a * clamp(1 - d.z / 1700) * .5;
+      if (a <= .004) continue;
+      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rr);
+      g.addColorStop(0, `rgba(${bg[0]|0},${bg[1]|0},${bg[2]|0},${a.toFixed(3)})`);
+      g.addColorStop(1, `rgba(${bg[0]|0},${bg[1]|0},${bg[2]|0},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sx, sy, rr, 0, 6.2832); ctx.fill();
+    }
+  }
+
+  function drawStars(t, speed, fade){
+    if (fade <= .01) return;
+    ctx.lineCap = 'round';
+    for (const s of stars){
+      const pz = s.z;
+      s.z -= speed * s.par;
+      if (s.z < 24){ spawnStar(s); continue; }
+      const sc = FOV / s.z, sx = cx + s.x * sc, sy = cy + s.y * sc;
+      if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
+      const near = clamp(1 - s.z / 1300);
+      let br = (.18 + s.m * .95) * near * fade;
+      if (br <= .012) continue;
+      br = clamp(br * (1 + .22 * Math.sin(t / (260 + s.tw * 90) + s.tw)));
+      const c = s.c;
+      const psc = FOV / pz, pxs = cx + s.x * psc, pys = cy + s.y * psc;
+      const len = Math.hypot(sx - pxs, sy - pys);
+      if (len > 2.2){
+        /* two strokes make a tapered streak without a gradient per star */
+        ctx.lineWidth = Math.max(.7, near * 1.9);
+        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(br * .32).toFixed(3)})`;
+        ctx.beginPath(); ctx.moveTo(pxs, pys); ctx.lineTo(sx, sy); ctx.stroke();
+        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${br.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(lerp(pxs, sx, .64), lerp(pys, sy, .64)); ctx.lineTo(sx, sy); ctx.stroke();
+      } else {
+        const rad = Math.max(.5, near * 1.5 + s.m * 1.1);
+        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${br.toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(sx, sy, rad, 0, 6.2832); ctx.fill();
+        if (s.m > .84){                      /* bright ones get a halo and a glint */
+          const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rad * 7);
+          g.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${(br * .45).toFixed(3)})`);
+          g.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(sx, sy, rad * 7, 0, 6.2832); ctx.fill();
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(br * .32).toFixed(3)})`;
+          ctx.lineWidth = .7;
+          ctx.beginPath();
+          ctx.moveTo(sx - rad * 4.4, sy); ctx.lineTo(sx + rad * 4.4, sy);
+          ctx.moveTo(sx, sy - rad * 4.4); ctx.lineTo(sx, sy + rad * 4.4);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function drawPlanet(t, speed){
+    planet.z -= speed * .55;          /* it is massive and far, so it drifts slowly */
+    /* fade as it passes rather than cutting out when it gets close */
+    const env = Math.sin(Math.PI * clamp(seg(t, 2150, 4100))) * clamp((planet.z - 180) / 420);
+    if (env <= .02) return;
+    const sc = FOV / planet.z, rr = planet.R * sc;
+    if (rr < 14) return;
+    const sx = cx + planet.fx * W * sc, sy = cy + planet.fy * H * sc;
+    /* atmosphere */
+    const h = ctx.createRadialGradient(sx, sy, rr * .9, sx, sy, rr * 1.18);
+    h.addColorStop(0,   'rgba(150,196,230,0)');
+    h.addColorStop(.42, `rgba(150,196,230,${(.28 * env).toFixed(3)})`);
+    h.addColorStop(1,   'rgba(150,196,230,0)');
+    ctx.fillStyle = h;
+    ctx.beginPath(); ctx.arc(sx, sy, rr * 1.18, 0, 6.2832); ctx.fill();
+    /* disc, lit from upper-left, terminator falling off fast */
+    ctx.save();
+    ctx.beginPath(); ctx.arc(sx, sy, rr, 0, 6.2832); ctx.clip();
+    const lx = sx - rr * .46, ly = sy - rr * .5;
+    const g = ctx.createRadialGradient(lx, ly, rr * .04, lx, ly, rr * 1.72);
+    g.addColorStop(0,   `rgba(226,186,150,${env.toFixed(3)})`);
+    g.addColorStop(.30, `rgba(186,142,110,${env.toFixed(3)})`);
+    g.addColorStop(.52, `rgba(116,84,68,${env.toFixed(3)})`);
+    g.addColorStop(.63, `rgba(40,30,30,${env.toFixed(3)})`);
+    g.addColorStop(1,   `rgba(10,9,12,${env.toFixed(3)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(sx - rr, sy - rr, rr * 2, rr * 2);
+    ctx.globalAlpha = .10 * env;             /* soft bands so it isn't a plain ball */
+    for (let i = 0; i < 3; i++){
+      ctx.fillStyle = i % 2 ? 'rgb(60,44,38)' : 'rgb(214,176,142)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy - rr * .3 + i * rr * .33, rr * 1.02, rr * (.10 + i * .02), 0, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    /* rim light on the lit limb */
+    ctx.strokeStyle = `rgba(236,228,214,${(.7 * env).toFixed(3)})`;
+    ctx.lineWidth = Math.max(1, rr * .013);
+    ctx.beginPath(); ctx.arc(sx, sy, rr * .995, Math.PI * 1.08, Math.PI * 1.96); ctx.stroke();
+  }
+
+  function drawArrival(t){
+    const a = Math.sin(Math.PI * clamp(seg(t, 3640, 4270))) * .9;
+    if (a <= .01) return;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .78);
+    g.addColorStop(0,   `rgba(255,246,232,${a.toFixed(3)})`);
+    g.addColorStop(.35, `rgba(255,240,222,${(a * .5).toFixed(3)})`);
+    g.addColorStop(1,   'rgba(255,238,220,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const s2 = ctx.createLinearGradient(0, cy, W, cy);   /* anamorphic streak */
+    s2.addColorStop(0, 'rgba(255,240,220,0)');
+    s2.addColorStop(.5, `rgba(255,248,236,${(a * .5).toFixed(3)})`);
+    s2.addColorStop(1, 'rgba(255,240,220,0)');
+    ctx.fillStyle = s2;
+    const hh = Math.max(2.4, H * .008);
+    ctx.fillRect(0, cy - hh / 2, W, hh);
+  }
+
+  /* the body's shading, interpolated: bright line → lit sphere → the tab's pill */
+  function shadowOf(k, d, up){
+    const n = (1 - d) * up;
+    return `inset 0 -7px 14px rgba(84,26,9,${(.5 * k * n).toFixed(3)}),` +
+           `inset 0 3px 9px rgba(255,238,220,${(.5 * k * n).toFixed(3)}),` +
+           `0 0 ${lerp(18, 24, k).toFixed(1)}px rgba(236,152,112,${(lerp(.85, .7, k) * n).toFixed(3)}),` +
+           `0 0 ${lerp(46, 86, k).toFixed(1)}px rgba(217,119,87,${(lerp(.45, .33, k) * n).toFixed(3)}),` +
+           `0 1px 2px rgba(41,38,31,${(.06 * d).toFixed(3)}),` +
+           `0 6px 16px -8px rgba(41,38,31,${(.28 * d).toFixed(3)})`;
+  }
+
+  /* the Chat tab's box — where the body is headed, and what it becomes */
+  function tabBox(){
+    /* the indicator itself, not the button — they differ by ~3px */
+    const ir = ind && ind.getBoundingClientRect();
+    if (ir && ir.width > 2)
+      return { cx:ir.left + ir.width / 2, cy:ir.top + ir.height / 2, w:ir.width, h:ir.height };
+    const chat = document.querySelector('#modeToggle .mode-btn[data-mode="chat"]');
+    const r2 = chat && chat.getBoundingClientRect();
+    if (!r2 || !r2.width) return { cx:cx, cy:H * .62, w:BODY_S, h:BODY_S };
+    return { cx:r2.left + r2.width / 2, cy:r2.top + r2.height / 2, w:r2.width, h:r2.height };
+  }
   function hintTabs(){
-    const btns = document.querySelectorAll('#modeToggle .mode-btn');
-    btns.forEach((bn, i) => setTimeout(() => {
+    document.querySelectorAll('#modeToggle .mode-btn').forEach((bn, i) => setTimeout(() => {
       bn.classList.add('tab-hint');
       setTimeout(() => bn.classList.remove('tab-hint'), 650);
     }, i * 95));
   }
+
+  /* ghost-blob secondary motion: the body chases its path on a spring, so it
+     trails, overshoots and jiggles instead of sitting rigidly on the line */
+  let px = 0, py = 0, vx = 0, vy = 0, jig = 0, jigV = 0;
+  let lagX = 0, lagY = 0, prevT = 0, stretch = 0;
+  let lastVis = null, dockFrom = null, dockTo = null;
+  let revealed = false, hinted = false;
   const t0 = performance.now();
 
   (function frame(now){
     if (ended) return;
     const t = now - t0;
-    let i = 0;
-    while (i + 1 < FLIGHT_STAGES.length && t >= FLIGHT_STAGES[i + 1].t) i++;
-    const st = FLIGHT_STAGES[i];
-    if (i !== last){                       // hard cut
-      last = i;
-      if (st.flash){ flashAt = t; flashCol = st.flash; }
-    }
-    const cx = W / 2, cy = H / 2;
+    const dt = clamp((t - prevT) / 1000, .001, .034); prevT = t;
+    const speed = keyAt(SPEED_KEYS, t);
+    const bg = keyAt(BG_KEYS, t);
 
-    ctx.fillStyle = st.bg;
+    /* ── space ── */
+    ctx.fillStyle = `rgb(${bg[0]|0},${bg[1]|0},${bg[2]|0})`;
     ctx.fillRect(0, 0, W, H);
+    drawNebula(t, speed, bg);
+    drawStars(t, speed, 1 - smooth(seg(t, 3900, 4190)));
+    drawPlanet(t, speed);
+    drawArrival(t);
 
-    // world accents
-    if (st.kind === 'grid'){
-      ctx.strokeStyle = 'rgba(134,217,239,.22)'; ctx.lineWidth = 1;
-      for (let k = 0; k < 14; k++){
-        const z = ((k * 90 + t * 0.35) % 1260) + 40;
-        const y = cy + (F * 150) / z;
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      }
-      for (let k = -7; k <= 7; k++){
-        ctx.beginPath(); ctx.moveTo(cx + k * 40, cy); ctx.lineTo(cx + k * W * 0.3, H); ctx.stroke();
-      }
-    } else if (st.kind === 'rings'){
-      for (let k = 0; k < 6; k++){
-        const rr = ((t - st.t) * 0.75 + k * 150) % 950;
-        ctx.strokeStyle = 'rgba(217,119,87,' + (0.4 * (1 - rr / 950)).toFixed(3) + ')';
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
-      }
-    } else if (st.kind === 'bloom'){
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.7);
-      g.addColorStop(0, 'rgba(255,240,220,' + Math.min(.85, (t - st.t) / 700).toFixed(3) + ')');
-      g.addColorStop(1, 'rgba(255,240,220,0)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    }
-
-    // stars
-    ctx.strokeStyle = st.star; ctx.lineCap = 'round';
-    const fade = st.kind === 'land' ? Math.max(0, 1 - (t - st.t) / 600) : 1;
-    ctx.globalAlpha = fade;
-    for (const s of stars){
-      const pz = s.z;
-      s.z -= st.speed;
-      if (s.z < 20){ spawn(s); continue; }
-      const sx = cx + (s.x / s.z) * F, sy = cy + (s.y / s.z) * F;
-      const px = cx + (s.x / pz) * F, py = cy + (s.y / pz) * F;
-      if (sx < -60 || sx > W + 60 || sy < -60 || sy > H + 60){ continue; }
-      ctx.lineWidth = Math.max(0.6, (1 - s.z / 1040) * 2.6);
-      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    // hard-cut flash
-    if (flashAt >= 0){
-      const fk = (t - flashAt) / 280;
-      if (fk < 1){ wash.style.background = flashCol; wash.style.opacity = String((1 - fk) * 0.85); }
-      else { wash.style.opacity = '0'; flashAt = -1; }
-    }
-
-    // ── bot motion: wander in flight, then break for the Chat tab ──
-    if (t > 780){
-      if (t < DOCK_T){
-        const dx = Math.sin(t / 520) * W * 0.17 + Math.sin(t / 230) * W * 0.05;
-        const dy = Math.cos(t / 610) * H * 0.11 + Math.sin(t / 310) * H * 0.035;
-        const bank = Math.sin(t / 520) * 16 + Math.sin(t / 230) * 5;
-        bot.style.transform = `translate(${dx}px,${dy}px) rotate(${bank}deg)`;
-        dockFrom = { dx, dy, bank };
+    /* ── the box: pill → line → body → tab pill ── */
+    let bw, bh, bx, by, land = 0;
+    const docking = t >= T_DOCK;
+    if (!docking){
+      /* the morph happens where the button was — the body then flies to the
+         middle on its own spring, which reads as travel rather than a jump */
+      if (t < T_SQ_1){
+        const p = eInOut(seg(t, T_SQ_0, T_SQ_1));
+        bw = lerp(box0.w, LINE_W, p) * (1 + .13 * Math.sin(Math.PI * p));  /* bulges as it flattens */
+        bh = lerp(box0.h, LINE_H, p);
+      } else if (t < T_HOLD){
+        bw = LINE_W; bh = LINE_H;
       } else {
-        if (!dockTo) dockTo = tabTarget();
-        const k = Math.min(1, (t - DOCK_T) / DOCK_DUR);
-        const e = 1 - Math.pow(1 - k, 3);
-        const dx = dockFrom.dx + (dockTo.dx - dockFrom.dx) * e;
-        const dy = dockFrom.dy + (dockTo.dy - dockFrom.dy) * e;
-        const bank = dockFrom.bank * (1 - e);
-        const sc = 1 - 0.42 * e;
-        bot.style.transform = `translate(${dx}px,${dy}px) rotate(${bank}deg) scale(${sc})`;
+        const q = seg(t, T_HOLD, T_INFL), e = eInOut(q);
+        /* squash-and-stretch, enveloped: zero at the hold, strongest once the
+           body has volume, settled by the time it is a sphere */
+        const env = Math.sin(Math.PI * Math.min(1, q * 1.25));
+        const wob = .20 * env * Math.exp(-1.8 * q) * Math.sin(q * 12.5);
+        bw = lerp(LINE_W, BODY_S, e) * (1 - wob * .8);
+        bh = lerp(LINE_H, BODY_S, e) * (1 + wob);
       }
+      bx = homeCx - bw / 2; by = homeCy - bh / 2;
+      lastVis = { cx:bx + bw / 2 + px, cy:by + bh / 2 + py, w:bw, h:bh };
+    } else {
+      if (!dockFrom){ dockFrom = lastVis || { cx:cx, cy:cy, w:BODY_S, h:BODY_S }; dockTo = tabBox(); }
+      const k = eOut(seg(t, T_DOCK, T_HAND));
+      bw = lerp(dockFrom.w, dockTo.w, k);
+      bh = lerp(dockFrom.h, dockTo.h, k);
+      bx = lerp(dockFrom.cx, dockTo.cx, k) - bw / 2;
+      by = lerp(dockFrom.cy, dockTo.cy, k) - bh / 2;
+      const lk = seg(t, T_DOCK + DOCK_DUR * .7, T_HAND);     /* it settles as it lands */
+      land = lk > 0 ? .17 * Math.exp(-lk * 5.2) * Math.sin(lk * 17) : 0;
     }
+    bodyEl.style.left = bx.toFixed(2) + 'px';
+    bodyEl.style.top = by.toFixed(2) + 'px';
+    bodyEl.style.width = bw.toFixed(2) + 'px';
+    bodyEl.style.height = bh.toFixed(2) + 'px';
 
-    // reveal the live site under the bot
-    if (!revealed && t >= SITE_T){
+    /* ── the fill, one gradient the whole way ── */
+    const fillA = seg(t, T_SQ_0, T_SQ_1 * .92);
+    const bodyK = eOut(seg(t, T_HOLD, T_INFL));
+    const dockK = docking ? smooth(seg(t, T_DOCK, T_DOCK + DOCK_DUR * .8)) : 0;
+    let ramp = mixRamp(RAMP_LINE, RAMP_BODY, bodyK);
+    if (dockK > 0) ramp = mixRamp(ramp, RAMP_TAB, dockK);
+    bodyEl.style.backgroundImage = gradOf(ramp, Math.max(fillA, bodyK > 0 ? 1 : fillA));
+    bodyEl.style.borderColor = `rgba(246,241,232,${(.35 * (1 - seg(t, T_SQ_0, T_SQ_1 * .8))).toFixed(3)})`;
+    bodyEl.style.boxShadow = shadowOf(bodyK, dockK, fillA);
+
+    /* label and the sweep along the line */
+    label.style.opacity = (1 - seg(t, 0, T_LABEL)).toFixed(3);
+    const sk = seg(t, T_SQ_1 - 60, T_HOLD + 120);
+    sheen.style.opacity = (sk > 0 && sk < 1 ? Math.sin(Math.PI * sk) * .95 : 0).toFixed(3);
+    sheen.style.left = lerp(-35, 105, sk).toFixed(1) + '%';
+
+    /* ── features: they grow out of the body, they do not fade in ── */
+    const ff = docking ? 1 - smooth(seg(t, T_DOCK, T_DOCK + DOCK_DUR * .5)) : 1;
+    const fk = seg(t, T_FEAT_0, T_FEAT_1);
+    const vs = fk <= 0 ? 0 : eOut(fk) * (1 + .12 * Math.exp(-5 * fk) * Math.sin(fk * 11));
+    visor.style.opacity = (clamp(fk * 3.2) * ff).toFixed(3);
+    visor.style.transform = `translate(${lagX.toFixed(2)}px,${lagY.toFixed(2)}px) scaleY(${(vs * ff).toFixed(3)})`;
+    const spk = seg(t, T_FEAT_0 + 90, T_FEAT_1);
+    spec.style.opacity = (clamp(spk * 1.6) * ff).toFixed(3);
+    spec.style.transform = `scale(${lerp(.35, 1, eOut(spk)).toFixed(3)})`;
+    const rk = seg(t, T_FEAT_0 + 150, T_FEAT_1 + 160);
+    ring.style.opacity = (clamp(rk * 1.4) * ff).toFixed(3);
+    ring.style.setProperty('--ring-s', lerp(1.5, 1, eOut(rk)).toFixed(3));
+
+    /* ── motion ── */
+    let tf;
+    if (!docking){
+      if (t > T_LAUNCH){
+        const ph = (t - T_LAUNCH) / 1000;
+        const launch = smooth(seg(t, T_LAUNCH, T_LAUNCH + 450));
+        const tx = ((cx - homeCx) + Math.sin(ph * 1.85) * W * .17 + Math.sin(ph * 4.3) * W * .052) * launch;
+        const ty = ((cy - homeCy) + Math.cos(ph * 1.55) * H * .11 + Math.sin(ph * 3.05) * H * .036) * launch;
+        const ax = (tx - px) * 40 - vx * 8.2, ay = (ty - py) * 40 - vy * 8.2;
+        vx += ax * dt; vy += ay * dt; px += vx * dt; py += vy * dt;
+        jigV += (-jig * 150 - jigV * 7.4 + Math.hypot(ax, ay) * .0006) * dt;
+        jig += jigV * dt;
+        lagX = clamp(-vx * .016, -3, 3); lagY = clamp(-vy * .016, -3, 3);
+      }
+      const sp = Math.hypot(vx, vy);
+      stretch += (clamp(sp / 2200, 0, .30) - stretch) * Math.min(1, dt * 11);
+      const st = stretch + clamp(jig, -.12, .12) * .5;
+      const hd = Math.atan2(vy, vx) * 57.2958;
+      const bank = clamp(vx / 820, -1, 1) * 17;
+      tf = `translate(${px.toFixed(2)}px,${py.toFixed(2)}px) rotate(${bank.toFixed(2)}deg) ` +
+           `rotate(${hd.toFixed(2)}deg) scale(${(1 + st).toFixed(3)},${(1 - st * .8).toFixed(3)}) ` +
+           `rotate(${(-hd).toFixed(2)}deg)`;
+    } else {
+      tf = `scale(${(1 + land * .75).toFixed(3)},${(1 - land).toFixed(3)})`;
+    }
+    bodyEl.style.transform = tf;
+
+    /* the live site comes up underneath */
+    if (!revealed && t >= T_SITE){
       revealed = true;
       cv.style.transition = 'opacity .6s linear';
       cv.style.opacity = '0';
-      wash.style.opacity = '0';
       flight.style.background = 'transparent';
       flight.style.pointerEvents = 'none';
       if (skip) skip.style.display = 'none';
@@ -2052,11 +2331,20 @@ function runFlight(){
       startSite();
     }
 
-    // docked: flag the other tabs, then dissolve
-    if (!hinted && t >= HINT_T){
+    /* hand off to the tab's own pill — identical box, identical white, so the
+       swap cannot be seen; the Chat label simply comes back out on top */
+    const ho = seg(t, T_HAND - 200, T_HAND);
+    if (ho > 0){
+      bodyEl.style.opacity = (1 - ho).toFixed(3);
+      if (ind) ind.style.opacity = ho.toFixed(3);
+    }
+    if (!hinted && t >= T_HAND){
       hinted = true;
+      if (ind){
+        ind.style.opacity = '1';
+        requestAnimationFrame(() => requestAnimationFrame(() => { if (ind) ind.style.transition = ''; }));
+      }
       hintTabs();
-      setTimeout(() => { bot.style.opacity = '0'; }, 460);
     }
 
     if (t < FLIGHT_END) requestAnimationFrame(frame); else finish();
