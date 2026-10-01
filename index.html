@@ -670,8 +670,88 @@
   }
   .enter-go:hover{background:#f6f1e8;color:#141311}
   .enter-go:active{transform:scale(.98)}
+  .enter-picks{position:relative;display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;animation:unveil 1s var(--ease) .5s both}
+  .enter-picks button{
+    background:none;border:none;border-bottom:1px solid rgba(246,241,232,.28);
+    color:#d9d0c4;font-family:var(--sans);font-size:13px;letter-spacing:-.01em;
+    padding:4px 0;cursor:pointer;
+  }
+  .enter-picks button:hover{color:#fff;border-bottom-color:#fff}
   .enter.is-out{animation:enterOut .7s var(--ease) forwards;pointer-events:none}
   @keyframes enterOut{to{opacity:0;transform:translateY(-6%);visibility:hidden}}
+
+  .reel{
+    position:fixed;inset:0;z-index:75;overflow-y:auto;scroll-snap-type:y mandatory;
+    height:100vh;background:#141311;color:#f6f1e8;
+  }
+  .reel.dimensions{background:#f4f1ea;color:#29261f}
+  .reel-badge{
+    position:fixed;top:22px;right:24px;z-index:3;
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:#b7aa9a;
+  }
+  .reel.dimensions .reel-badge{color:var(--ink-3)}
+  .reel-skip{
+    position:fixed;top:18px;left:24px;z-index:3;
+    background:none;border:none;color:inherit;cursor:pointer;
+    font-family:var(--sans);font-size:13px;letter-spacing:-.01em;opacity:.7;
+  }
+  .reel-skip:hover{opacity:1}
+  .reel-ring{
+    position:fixed;left:7vw;top:50%;transform:translateY(-50%);z-index:2;
+    width:210px;height:210px;border-radius:50%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:conic-gradient(var(--clay) calc(var(--pct, 0) * 1%), rgba(255,255,255,.14) 0);
+    transition:--pct .8s var(--ease);
+  }
+  .reel.dimensions .reel-ring{background:conic-gradient(var(--clay) calc(var(--pct, 0) * 1%), #e7e2d4 0)}
+  .reel-ring::after{content:"";position:absolute;inset:16px;border-radius:50%;background:#141311}
+  .reel.dimensions .reel-ring::after{background:#f4f1ea}
+  .reel-ring b,.reel-ring small{position:relative;z-index:1}
+  .reel-ring b{font-family:var(--serif);font-size:40px;font-weight:500;letter-spacing:-.04em;line-height:1}
+  .reel-ring small{margin-top:4px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b7aa9a}
+  .reel.dimensions .reel-ring small{color:var(--ink-3)}
+  .reel-slide{
+    min-height:100vh;scroll-snap-align:start;scroll-snap-stop:always;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:12vh 8vw 12vh calc(7vw + 270px);box-sizing:border-box;
+  }
+  .reel-slide .idx{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#b7aa9a}
+  .reel.dimensions .reel-slide .idx{color:var(--clay-deep)}
+  .reel-slide h2{font-family:var(--serif);font-weight:500;letter-spacing:-.045em;line-height:.95;font-size:clamp(48px, 7vw, 104px);margin:12px 0 18px}
+  .reel-slide p{max-width:36ch;font-size:18px;line-height:1.5;letter-spacing:-.02em;color:#d9d0c4}
+  .reel.dimensions .reel-slide p{color:var(--ink-2)}
+  .reel-slide .proj-pipe,.reel-slide .proj-object,.reel-slide .proj-eq{margin-top:8px;max-width:520px}
+  .reel.film .proj-eq{background:#2c2822;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+  .reel-open{
+    margin-top:26px;width:fit-content;cursor:pointer;
+    background:var(--clay);color:#fff;border:none;border-radius:999px;
+    font-family:var(--sans);font-size:15px;font-weight:500;padding:12px 20px;
+  }
+  .reel-hint{margin-top:28px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b7aa9a}
+  .traveler{
+    position:fixed;right:22px;top:46%;z-index:25;
+    display:flex;flex-direction:column;gap:2px;pointer-events:none;
+    background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(16px);
+    backdrop-filter:saturate(180%) blur(16px);
+    border-radius:16px;padding:12px 16px 14px;box-shadow:var(--shadow);
+  }
+  .traveler .idx{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--clay-deep)}
+  .traveler b{font-family:var(--serif);font-size:28px;font-weight:500;letter-spacing:-.03em;color:var(--ink)}
+  .travel-story section{
+    min-height:72vh;display:flex;flex-direction:column;justify-content:center;gap:8px;
+    border-top:1px solid var(--line);padding:24px 8vw 24px 0;
+  }
+  .travel-story .idx{font-family:var(--mono);font-size:12px;letter-spacing:.16em;color:var(--clay-deep)}
+  .travel-story h3{font-family:var(--serif);font-size:clamp(36px, 5vw, 64px);font-weight:500;letter-spacing:-.04em;line-height:1}
+  .travel-story p{max-width:42ch;color:var(--ink-2);font-size:16px;line-height:1.5}
+  .travel-story .proj-pipe,.travel-story .proj-object,.travel-story .proj-eq{max-width:520px;margin-top:6px}
+  @media(max-width:860px){
+    .reel-ring{width:120px;height:120px;left:50%;top:18px;transform:translateX(-50%)}
+    .reel-ring b{font-size:26px}
+    .reel-slide{padding:150px 22px 48px}
+    .traveler{right:14px;top:auto;bottom:78px}
+  }
   @media(max-width:860px){
     .enter{padding:12vh 22px 8vh}
     .enter-name{font-size:46px}
@@ -738,7 +818,12 @@
   <p class="enter-kicker">Lead Site Reliability Engineer</p>
   <h2 class="enter-name"><span>Avinash</span><span>Reddy Pothireddy</span></h2>
   <p class="enter-line">Eight years keeping systems up. Agents that call a tool instead of guessing.</p>
-  <button class="enter-go" id="enterGo" type="button">Enter</button>
+  <button class="enter-go" id="enterGo" type="button">Enter the agent</button>
+  <div class="enter-picks">
+    <button type="button" data-preview="dimensions">1 · Dimensions</button>
+    <button type="button" data-preview="traveler">2 · Traveler</button>
+    <button type="button" data-preview="film">3 · Film</button>
+  </div>
 </div>
 
 <div class="mobile-bar">
@@ -910,8 +995,9 @@ let archShown = false;
 let history = []; // {role:'user'|'agent', content:string}, capped to last 6 turns
 
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
+let travelerOn = false;
 function scrollDown(){
-  if (mode === 'projects' || mode === 'arch') return;
+  if (mode === 'projects' || mode === 'arch' || travelerOn) return;
   conv.scrollTop = conv.scrollHeight;
 }
 function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
@@ -1557,15 +1643,108 @@ function startSite(){
   snapInd();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(snapInd);
 }
-function dismissEnter(){
+function closeCover(after){
   const el = document.getElementById('enter');
-  if (!el){ startSite(); return; }
-  if (el.dataset.gone) return;
+  let finished = false;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    if (el && el.isConnected) el.remove();
+    if (after) after();
+  };
+  if (!el || el.dataset.gone){ done(); return; }
   el.dataset.gone = '1';
   el.classList.add('is-out');
-  const finish = () => { if (el.isConnected) el.remove(); startSite(); };
-  el.addEventListener('animationend', finish, { once: true });
-  setTimeout(finish, 900);
+  el.addEventListener('animationend', done, { once: true });
+  setTimeout(done, 900);
+}
+function dismissEnter(){ closeCover(startSite); }
+
+const CHAPTERS = [
+  { id:'reliability', idx:'01', name:'Reliability', figure:'99.9', unit:'%', pct:99.9,
+    text:'The ring is the error budget. 99.9% over 30 days is what the SLO sandbox draws.',
+    object:'' },
+  { id:'agents', idx:'02', name:'Agents', figure:'5', unit:'steps', pct:64,
+    text:'Five boards, one pipeline. A person approves the last step.',
+    object: () => pipeRow(['Discover','Score','Tailor','Fill','Human approve']) },
+  { id:'assay', idx:'03', name:'Assay', figure:'×', unit:'fair', pct:36,
+    text:'Every figure stays on this line. A model can talk. It cannot change it.',
+    object: () => `<div class="proj-eq"><div class="k">How the price is computed</div><div class="v">fair = baseline × (1 + condition) × (1 + completeness)</div></div>` },
+  { id:'talk', idx:'04', name:'This site', figure:'AP', unit:'live', pct:100,
+    text:'The ring settles. Under it is the agent.',
+    object: () => pipeRow(['Browser','GitHub Pages','Cloud Run','Groq']) }
+];
+function chapterObject(ch){
+  return typeof ch.object === 'function' ? ch.object() : (ch.object || '');
+}
+function applyRing(ch){
+  const ring = document.getElementById('reelRing');
+  if (!ring || !ch) return;
+  ring.style.setProperty('--pct', String(ch.pct));
+  ring.querySelector('b').textContent = ch.figure;
+  ring.querySelector('small').textContent = ch.idx + '  ' + ch.name;
+}
+function leaveReel(){
+  const reel = document.getElementById('reel');
+  if (reel) reel.remove();
+  startSite();
+}
+function mountReel(kind){
+  const film = kind === 'film';
+  const reel = document.createElement('div');
+  reel.id = 'reel';
+  reel.className = 'reel' + (film ? ' film' : ' dimensions');
+  reel.innerHTML = `
+    <button class="reel-skip" type="button">Skip to the agent</button>
+    <div class="reel-badge">Preview · ${film ? 'Film' : 'Dimensions'}</div>
+    <div class="reel-ring" id="reelRing" style="--pct:0"><b>99.9</b><small>01 Reliability</small></div>
+    ${CHAPTERS.map((ch, i) => `<section class="reel-slide" data-dim="${ch.id}">
+      <div class="idx">${ch.idx} / 04</div>
+      <h2>${ch.name}</h2>
+      ${chapterObject(ch)}
+      <p>${ch.text}</p>
+      ${i === 0 ? '<div class="reel-hint">Scroll</div>' : ''}
+      ${i === CHAPTERS.length - 1 ? '<button class="reel-open" type="button">Open the agent</button>' : ''}
+    </section>`).join('')}`;
+  document.body.appendChild(reel);
+  reel.querySelector('.reel-skip').addEventListener('click', leaveReel);
+  reel.querySelector('.reel-open').addEventListener('click', leaveReel);
+  const io = new IntersectionObserver(entries => {
+    const hit = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (!hit) return;
+    applyRing(CHAPTERS.find(c => c.id === hit.target.dataset.dim));
+  }, { root: reel, threshold: [0.55, 0.75] });
+  reel.querySelectorAll('.reel-slide').forEach(s => io.observe(s));
+  requestAnimationFrame(() => applyRing(CHAPTERS[0]));
+}
+function mountTraveler(){
+  travelerOn = true;
+  const label = document.createElement('div');
+  label.className = 'traveler';
+  label.innerHTML = '<span class="idx">01</span><b>Reliability</b>';
+  document.body.appendChild(label);
+  const story = document.createElement('div');
+  story.className = 'travel-story';
+  story.innerHTML = CHAPTERS.map(ch => `<section data-dim="${ch.id}"><div class="idx">${ch.idx} / 04</div><h3>${ch.name}</h3>${chapterObject(ch)}<p>${ch.text}</p></section>`).join('');
+  conv.appendChild(story);
+  startSite();
+  const setLabel = id => {
+    const ch = CHAPTERS.find(c => c.id === id);
+    if (!ch) return;
+    label.querySelector('.idx').textContent = ch.idx;
+    label.querySelector('b').textContent = ch.name;
+  };
+  const io = new IntersectionObserver(entries => {
+    const hit = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (hit) setLabel(hit.target.dataset.dim);
+  }, { root: conv, threshold: [0.45, 0.6] });
+  story.querySelectorAll('section').forEach(s => io.observe(s));
+}
+function openPreview(kind){
+  closeCover(() => {
+    if (kind === 'traveler') mountTraveler();
+    else mountReel(kind);
+  });
 }
 (function initEnter(){
   const el = document.getElementById('enter');
@@ -1574,6 +1753,9 @@ function dismissEnter(){
   if (!el){ startSite(); return; }
   go.addEventListener('click', dismissEnter);
   el.addEventListener('click', e => { if (e.target === el) dismissEnter(); });
+  el.querySelectorAll('[data-preview]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openPreview(btn.dataset.preview); });
+  });
   window.addEventListener('keydown', e => {
     if ((e.key === 'Enter' || e.key === 'Escape') && document.getElementById('enter')) dismissEnter();
   });
