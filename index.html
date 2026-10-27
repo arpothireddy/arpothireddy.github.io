@@ -714,24 +714,49 @@
     background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.95),rgba(255,255,255,0));
     opacity:0;pointer-events:none;
   }
-  /* two plain eyes sitting on the body. They open as the character forms —
-     the forming IS the first blink — and blink on their own after that. */
+  /* the helmet's visor. It grows out of the shell with everything else, so
+     the character is still one object on one clock. */
+  .bot-visor{
+    position:absolute;left:50%;top:42%;z-index:2;
+    width:70%;height:55%;
+    transform:translate(-50%,-50%) scale(var(--vis-s,1));
+    transform-origin:50% 50%;
+    border-radius:48% 48% 42% 42% / 52% 52% 48% 48%;
+    background:
+      radial-gradient(120% 88% at 30% 16%,rgba(146,206,236,.42) 0%,rgba(44,76,102,.20) 38%,rgba(0,0,0,0) 64%),
+      linear-gradient(168deg,#1d2a36 0%,#0c131b 54%,#18222d 100%);
+    box-shadow:
+      inset 0 2px 5px rgba(196,232,255,.28),
+      inset 0 -4px 10px rgba(0,0,0,.55),
+      0 0 0 1.5px rgba(255,232,208,.60);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;opacity:0;
+  }
+  /* the reflection sliding across the glass */
+  .bot-glare{
+    position:absolute;left:-16%;top:-34%;width:56%;height:168%;z-index:3;
+    background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.30),rgba(255,255,255,0));
+    transform:rotate(24deg);pointer-events:none;
+  }
+  /* two lights behind the glass. They open as the character forms — the
+     forming IS the first blink — and blink on their own after that. */
   .bot-eyes{
     position:relative;z-index:2;
-    width:54%;height:32%;margin-top:-5%;
-    display:flex;align-items:center;justify-content:center;gap:19%;
+    width:64%;height:30%;
+    display:flex;align-items:center;justify-content:center;gap:18%;
     opacity:0;transform-origin:50% 50%;
   }
   .bot-eyes i{
-    width:28%;height:100%;min-width:3px;border-radius:999px;
-    background:#1a1109;box-shadow:0 1px 2px rgba(84,26,9,.45);
+    width:30%;height:100%;min-width:3px;border-radius:999px;
+    background:linear-gradient(180deg,#ffffff,#ffe4c6);
+    box-shadow:0 0 6px rgba(255,226,196,.95),0 0 15px rgba(255,186,132,.55);
     transform-origin:50% 50%;
     /* --blink drives the lid; --blink-x is the little widen as it closes */
     transform:rotate(13deg) scale(var(--blink-x,1),var(--blink,1));
   }
   .bot-spec{
     position:absolute;left:17%;top:11%;width:35%;height:27%;z-index:3;border-radius:50%;
-    background:radial-gradient(circle,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 70%);
+    background:radial-gradient(circle,rgba(255,255,255,.98) 0%,rgba(255,246,236,.42) 42%,rgba(255,255,255,0) 72%);
     opacity:0;transform-origin:50% 50%;
   }
   .bot-ring{
@@ -909,7 +934,7 @@
   <canvas id="flightCanvas"></canvas>
   <div class="bot" id="bot">
     <span class="bot-ring"></span><span class="bot-spec"></span>
-    <span class="bot-eyes"><i></i><i></i></span>
+    <span class="bot-visor"><span class="bot-eyes"><i></i><i></i></span><span class="bot-glare"></span></span>
     <span class="bot-sheen"></span><span class="bot-label">Enter the agent</span>
   </div>
   <button class="flight-skip" id="flightSkip" type="button">Skip</button>
@@ -1904,7 +1929,7 @@ const smooth  = k => k * k * (3 - 2 * k);
    interpolated, so the line and the sphere are literally the same object. */
 const STOPS     = [0, 26, 52, 76, 100];
 const RAMP_LINE = [[255,255,255],[255,250,242],[255,232,208],[255,212,176],[250,198,154]];
-const RAMP_BODY = [[255,244,232],[246,185,141],[223,138,94],[191,92,57],[142,59,31]];
+const RAMP_BODY = [[255,253,250],[246,240,231],[228,218,205],[200,187,173],[152,140,129]];
 const RAMP_TAB  = [[255,255,255],[255,255,255],[254,253,251],[252,250,247],[250,248,244]];
 const mixRamp = (a, b, k) => a.map((c, i) => c.map((v, j) => lerp(v, b[i][j], k)));
 const gradOf  = (ramp, a) => 'radial-gradient(118% 110% at 28% 20%,' + ramp.map((c, i) =>
@@ -1913,14 +1938,9 @@ const gradOf  = (ramp, a) => 'radial-gradient(118% 110% at 28% 20%,' + ramp.map(
 /* ── the four dimensions it falls through ────────────────────────────────────
    A single smooth curve can't give the sense of passing through somewhere,
    which is the whole point. So: hard worlds, each with its own geometry,
-   palette and motion blur, cross-cut fast.
-   WORLD_HOLD is how much of the previous frame each world keeps. A partial
-   clear instead of a full one is what smears the streaks into real motion
-   blur — it is most of why the reference reads as speed rather than lines. */
+   palette and motion blur, cross-cut fast. */
 const W_T        = [0, 1950, 2760, 3460, 4250];   /* void · shaft · glitch · vortex · arrive */
 const XFADE      = 150;
-const WORLD_BG   = [[6,6,11],[3,5,8],[2,7,4],[9,2,10],[244,241,234]];
-const WORLD_HOLD = [1, .40, .52, .26, .55];
 const SPEED_KEYS = [[0,.8],[1150,1.6],[1950,17],[2760,25],[3460,31],[4250,10],[4500,1.5]];
 
 function worldAt(t){
@@ -1940,18 +1960,6 @@ function keyAt(keys, t){
   }
   return keys[keys.length - 1][1];
 }
-
-/* real star colours: mostly faint yellow-white, a few blue giants, a few reds */
-const STAR_COLS = [[176,200,255],[214,228,255],[240,244,255],[255,250,236],
-                   [255,236,206],[255,214,176],[255,188,158]];
-const STAR_WTS  = [.05,.12,.20,.26,.19,.12,.06];
-function starCol(){
-  let r = Math.random(), a = 0;
-  for (let i = 0; i < STAR_WTS.length; i++){ a += STAR_WTS[i]; if (r < a) return STAR_COLS[i]; }
-  return STAR_COLS[3];
-}
-const PAL_SHAFT  = { line:'150,220,230', frag:'195,246,246', ca:'40,200,210', cb:'120,160,255' };
-const PAL_GLITCH = { line:'120,210,120', frag:'192,255,150', ca:'70,255,120', cb:'232,255,70' };
 
 /* ── the four dimensions, as one fragment shader ─────────────────────────────
    Canvas 2D could only fake depth by scaling flat shapes by 1/z, which is why
@@ -1988,6 +1996,12 @@ uniform vec3 uBot,uBotC;
 ${HASH}
 #define PI 3.14159265
 float gband(float r,float c,float w){float k=(r-c)/w;return exp(-k*k);}
+float vnoise(vec2 p){
+  vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2(1,0)),f.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x),f.y);
+}
+float fbm3(vec2 p){float v=0.,a=.5;for(int i=0;i<3;i++){v+=a*vnoise(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
+float fbm4(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*vnoise(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
 
 /* 1 — the void. Forward motion is a translation in log(r), so a plain grid in
    log-polar space gives stars that fly outward and accelerate the way real
@@ -2003,18 +2017,32 @@ vec3 wVoid(vec2 uv){
     if(hh>.80){
       vec2 o=(h22(ci+fi*13.)-.5)*.5;
       float d=length(cf-o);
-      float m=pow(h11(hh*91.),2.2);
+      /* a steep magnitude curve: a great many faint, a very few fierce. The
+         bright ones are what the bloom turns into real halation. */
+      float m=pow(h11(hh*91.),3.4);
       float tw=.82+.18*sin(uT*.0016+hh*40.);
-      vec3 sc=mix(vec3(.72,.80,1.),vec3(1.,.86,.68),h11(hh*31.));
-      st+=sc*(.00030/(d*d+.00016))*(.25+m)*tw;
+      vec3 sc=mix(vec3(.66,.76,1.),vec3(1.,.84,.62),h11(hh*31.));
+      st+=sc*(.00026/(d*d+.00013))*(.16+m*2.6)*tw;
     }
   }
   st*=smoothstep(0.,.09,r);
-  vec3 col=vec3(.018,.018,.034)+st;
-  /* wide and faint — a wash behind the dark, not a ring in front of it */
-  col+=vec3(.34,.18,.42)*gband(r,.30,.26)*.13;
-  col+=vec3(.62,.32,.22)*gband(r,.46,.28)*.11;
-  col+=vec3(.18,.40,.56)*gband(r,.64,.32)*.10;
+
+  /* The nebula is domain-warped fbm, not a radial gradient. The warp is what
+     turns blobs into filaments, and the dust lanes bitten out of it are what
+     stop it reading as coloured fog. */
+  vec2 np=uv*1.75+vec2(uDist*.00007,0.);
+  vec2 wrp=vec2(fbm3(np*1.25+vec2(0.,1.7)),fbm3(np*1.25+vec2(5.2,1.3)));
+  float n=fbm4(np+wrp*1.45);
+  float neb=smoothstep(.40,.86,n);
+  vec3 ncol=mix(vec3(.26,.09,.40),vec3(.70,.26,.20),smoothstep(.34,.72,wrp.x+n*.4));
+  ncol=mix(ncol,vec3(.14,.32,.62),smoothstep(.46,.88,wrp.y+n*.3));
+  float dust=smoothstep(.64,.26,fbm3(np*2.15+vec2(3.1,8.8)));
+  /* a soft large-scale envelope so it drifts across frame rather than ringing
+     the centre */
+  float env=gband(r,.34,.46);
+  vec3 col=vec3(.013,.013,.028)+ncol*neb*dust*env*.72+st;
+  /* the faintest haze, to keep the deep field from going flat black */
+  col+=vec3(.10,.12,.22)*smoothstep(.15,.75,n)*env*.10;
   return col;
 }
 
@@ -2097,7 +2125,7 @@ void main(){
      sitting on top of it like a sticker */
   vec2 bp=(uBot.xy-.5*uRes)/uRes.y;
   float bd=length(uv-bp);
-  col+=uBotC*uBotA*(.0040/(bd*bd+.0045));
+  col+=uBotC*uBotA*(.0020/(bd*bd+.0075));
   gl_FragColor=vec4(col,1.);
 }`;
 
@@ -2313,15 +2341,22 @@ function runFlight(){
   const go      = document.getElementById('enterGo');
   const flight  = document.getElementById('flight');
   const bodyEl  = document.getElementById('bot');
-  let   cv      = document.getElementById('flightCanvas');
+  const cv      = document.getElementById('flightCanvas');
   const skip    = document.getElementById('flightSkip');
   if (!flight || !bodyEl || !cv || !enterEl || !go){ closeCover(startSite); return; }
   if (flight.dataset.on) return;
   flight.dataset.on = '1';
 
+  /* Shaders or nothing. The canvas 2D version of this looked markedly worse
+     than no intro at all, so a machine without WebGL goes straight to the
+     site — exactly what the reduced-motion path already does. */
+  const glr = makeFlightGL(cv);
+  if (!glr){ flight.remove(); closeCover(startSite); return; }
+
   const label = bodyEl.querySelector('.bot-label');
   const sheen = bodyEl.querySelector('.bot-sheen');
   const eyes  = bodyEl.querySelector('.bot-eyes');
+  const visor = bodyEl.querySelector('.bot-visor');
   const spec  = bodyEl.querySelector('.bot-spec');
   const ring  = bodyEl.querySelector('.bot-ring');
   const ind   = document.querySelector('#modeToggle .mode-ind');
@@ -2352,288 +2387,21 @@ function runFlight(){
   enterEl.classList.add('is-out');
 
   /* ── canvas ── */
-  /* shaders if WebGL is there, the canvas 2D renderer below if it is not */
-  const glr = makeFlightGL(cv);
-  if (!glr){
-    /* getContext('webgl') is sticky: a failed attempt leaves the element unable
-       to hand out a 2D context, so the fallback gets a fresh canvas */
-    const fresh = cv.cloneNode(false);
-    cv.parentNode.replaceChild(fresh, cv);
-    cv = fresh;
-  }
-  const ctx = glr ? null : cv.getContext('2d');
-  let dpr = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0, cx = 0, cy = 0;
+  let W = 0, H = 0, cx = 0, cy = 0;
   const size = () => {
     W = window.innerWidth; H = window.innerHeight; cx = W / 2; cy = H / 2;
-    if (glr){ glr.resize(); return; }
-    cv.width = W * dpr; cv.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    glr.resize();
   };
   size();
   window.addEventListener('resize', size);
-
-  const FOV = 420;
-  const small = window.innerWidth < 600;
-  const NSTARS = small ? 150 : 260;
-
-  const stars = [];
-  const spawnStar = s => {
-    s.x = (Math.random() - .5) * W * 2.4;
-    s.y = (Math.random() - .5) * H * 2.4;
-    s.z = Math.random() * 1200 + 60;
-    s.m = Math.pow(Math.random(), 2.6);      /* magnitude: many faint, few bright */
-    s.c = starCol();
-    s.par = .75 + Math.random() * .5;
-    s.tw = Math.random() * 6.283;
-  };
-  for (let i = 0; i < NSTARS; i++){ const s = {}; spawnStar(s); stars.push(s); }
-
-  /* the shaft: light fixed to the four walls of a receding corridor. Real
-     perspective, so the walls open past the camera instead of sliding by. */
-  const frags = [];
-  const newFrag = f => {
-    f = f || {};
-    f.wall = (Math.random() * 4) | 0;
-    f.u    = Math.random() * 2 - 1;
-    f.z    = Math.random() * 2200 + 80;
-    f.len  = .04 + Math.random() * .20;
-    f.th   = .010 + Math.random() * .026;
-    f.b    = .30 + Math.random() * .70;
-    return f;
-  };
-  for (let i = 0; i < (small ? 40 : 72); i++) frags.push(newFrag());
-  let tunZ = 0;
-
-  /* the vortex: streaks spiralling into the core */
-  const spir = [];
-  const newSpir = s => {
-    s = s || {};
-    s.a = Math.random() * 6.283;
-    s.r = .10 + Math.random() * 1.30;
-    s.v = .35 + Math.random() * .95;
-    s.l = .07 + Math.random() * .26;
-    s.b = .35 + Math.random() * .65;
-    return s;
-  };
-  for (let i = 0; i < (small ? 50 : 72); i++) spir.push(newSpir());
-  /* scratch reused every frame so the vortex allocates nothing */
-  const VSEG = 3;
-  const vbuf = new Float64Array(spir.length * (VSEG + 1) * 2);
-  const vtier = [[], [], [], []];
-
-  /* state advances once per frame, never per draw — otherwise a world drawn
-     twice during a cross-cut would run at double speed */
-  function stepWorlds(speed){
-    tunZ += speed;
-    for (const f of frags){ f.z -= speed; if (f.z < 60){ newFrag(f); f.z += 2200; } }
-    for (const s of spir){
-      s.r -= speed * .00062 * s.v;
-      s.a += .011 * s.v;
-      if (s.r < .04){ newSpir(s); s.r = 1.34; }
-    }
-  }
-
-  function drawStars(t, speed, fade){
-    if (fade <= .01) return;
-    ctx.lineCap = 'round';
-    for (const s of stars){
-      const pz = s.z;
-      s.z -= speed * s.par;
-      if (s.z < 24){ spawnStar(s); continue; }
-      const sc = FOV / s.z, sx = cx + s.x * sc, sy = cy + s.y * sc;
-      if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
-      const near = clamp(1 - s.z / 1300);
-      let br = (.18 + s.m * .95) * near * fade;
-      if (br <= .012) continue;
-      br = clamp(br * (1 + .22 * Math.sin(t / (260 + s.tw * 90) + s.tw)));
-      const c = s.c;
-      const psc = FOV / pz, pxs = cx + s.x * psc, pys = cy + s.y * psc;
-      if (Math.hypot(sx - pxs, sy - pys) > 2.2){
-        ctx.lineWidth = Math.max(.7, near * 1.9);
-        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(br * .32).toFixed(3)})`;
-        ctx.beginPath(); ctx.moveTo(pxs, pys); ctx.lineTo(sx, sy); ctx.stroke();
-        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${br.toFixed(3)})`;
-        ctx.beginPath();
-        ctx.moveTo(lerp(pxs, sx, .64), lerp(pys, sy, .64)); ctx.lineTo(sx, sy); ctx.stroke();
-      } else {
-        const rad = Math.max(.5, near * 1.5 + s.m * 1.1);
-        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${br.toFixed(3)})`;
-        ctx.beginPath(); ctx.arc(sx, sy, rad, 0, 6.2832); ctx.fill();
-        if (s.m > .84){
-          const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rad * 7);
-          g.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${(br * .45).toFixed(3)})`);
-          g.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
-          ctx.fillStyle = g;
-          ctx.beginPath(); ctx.arc(sx, sy, rad * 7, 0, 6.2832); ctx.fill();
-        }
-      }
-    }
-  }
-
-  /* 1 — the void: almost nothing, and a huge soft corona around the dark */
-  function drawVoid(t, a, speed){
-    drawStars(t, speed * .4, a);
-    const R = Math.max(W, H) * .62;
-    ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(cx, cy, R * .50, cx, cy, R * 1.04);
-    g.addColorStop(0,   'rgba(0,0,0,0)');
-    g.addColorStop(.38, `rgba(78,44,96,${(.30 * a).toFixed(3)})`);
-    g.addColorStop(.58, `rgba(152,78,58,${(.26 * a).toFixed(3)})`);
-    g.addColorStop(.78, `rgba(52,104,138,${(.24 * a).toFixed(3)})`);
-    g.addColorStop(1,   'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'source-over';
-  }
-
-  /* 2 & 3 — the shaft. chroma > 0 splits every fragment red/blue, which is
-     what gives the glitch world its torn, mis-registered look. */
-  function drawShaft(a, pal, chroma){
-    const HW = W * .54, HH = H * .54;
-    for (let i = 0; i < 13; i++){
-      const z = ((i * 185 - tunZ) % 2405 + 2405) % 2405 + 70;
-      const s = FOV / z, w2 = HW * s, h2 = HH * s;
-      if (w2 < 3) continue;
-      const near = clamp(1 - z / 2405);
-      ctx.strokeStyle = `rgba(${pal.line},${(.17 * near * a).toFixed(3)})`;
-      ctx.lineWidth = Math.max(.6, near * 1.7);
-      ctx.strokeRect(cx - w2, cy - h2, w2 * 2, h2 * 2);
-    }
-    if (chroma) ctx.globalCompositeOperation = 'lighter';
-    for (const f of frags){
-      const s = FOV / f.z, w2 = HW * s, h2 = HH * s;
-      if (w2 < 2) continue;
-      const near = clamp(1 - f.z / 2405);
-      const br = f.b * near * a;
-      if (br < .02) continue;
-      let x, y, ww, hh;
-      if (f.wall < 2){
-        ww = Math.max(1, f.len * w2 * 2); hh = Math.max(1, f.th * h2 * 2);
-        x = cx + f.u * w2 - ww / 2;
-        y = (f.wall === 0 ? cy - h2 : cy + h2) - hh / 2;
-      } else {
-        hh = Math.max(1, f.len * h2 * 2); ww = Math.max(1, f.th * w2 * 2);
-        y = cy + f.u * h2 - hh / 2;
-        x = (f.wall === 2 ? cx - w2 : cx + w2) - ww / 2;
-      }
-      if (x < -260 || x > W + 260 || y < -260 || y > H + 260) continue;
-      if (chroma){
-        const d = chroma * (1 + near * 2.4);
-        ctx.fillStyle = `rgba(${pal.ca},${(br * .75).toFixed(3)})`; ctx.fillRect(x - d, y, ww, hh);
-        ctx.fillStyle = `rgba(${pal.cb},${(br * .75).toFixed(3)})`; ctx.fillRect(x + d, y, ww, hh);
-        ctx.fillStyle = `rgba(255,255,255,${(br * .60).toFixed(3)})`; ctx.fillRect(x, y, ww, hh);
-      } else {
-        ctx.fillStyle = `rgba(${pal.frag},${br.toFixed(3)})`;
-        ctx.fillRect(x, y, ww, hh);
-      }
-    }
-    if (chroma) ctx.globalCompositeOperation = 'source-over';
-  }
-
-  /* 3 — datamosh on top: the frame sliced and shoved sideways, plus block noise */
-  function glitchPass(a){
-    const n = 2 + (Math.random() * 3 | 0);   /* each one is a canvas-to-self copy */
-    for (let i = 0; i < n; i++){
-      const y = Math.random() * (H - 40), h = 4 + Math.random() * 26;
-      const dx = (Math.random() * 2 - 1) * 80 * a;
-      ctx.drawImage(cv, 0, y * dpr, W * dpr, h * dpr, dx, y, W, h);
-    }
-    ctx.globalCompositeOperation = 'lighter';
-    const cols = ['120,255,140', '255,240,90', '90,255,225'];
-    const nb = 7 + (Math.random() * 13 | 0);
-    for (let i = 0; i < nb; i++){
-      ctx.fillStyle = `rgba(${cols[(Math.random() * 3) | 0]},${((.12 + Math.random() * .3) * a).toFixed(3)})`;
-      ctx.fillRect(Math.random() * W, Math.random() * H, 6 + Math.random() * 72, 3 + Math.random() * 15);
-    }
-    ctx.globalCompositeOperation = 'source-over';
-  }
-
-  /* 4 — pulled into the core. Every streak is drawn three times, offset red
-     and blue around a white centre: chromatic aberration, done additively. */
-  function drawVortex(t, a){
-    const R = Math.hypot(W, H) * .58;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.lineCap = 'round';
-    /* Each streak sweeps its whole arc in one path — a straight chord per frame
-       piles up into a comb of copies instead of a continuous ribbon. Streaks are
-       bucketed by depth so one path per colour per tier covers all of them:
-       12 stroke calls a frame rather than three per streak. */
-    const SEG = VSEG, TIERS = 4, STRIDE = (SEG + 1) * 2;
-    for (let i = 0; i < TIERS; i++) vtier[i].length = 0;
-    for (const s of spir){
-      if (s.r > 1.24) continue;
-      vtier[Math.min(TIERS - 1, Math.max(0, ((1.3 - s.r) / 1.3 * TIERS) | 0))].push(s);
-    }
-    for (let ti = 0; ti < TIERS; ti++){
-      const list = vtier[ti];
-      if (!list.length) continue;
-      const m = (ti + .5) / TIERS * 1.3;
-      const br = a * m * .46;
-      if (br < .015) continue;
-      ctx.lineWidth = Math.max(1, m * 5);
-      const d = 2 + m * 4.5;
-      let np = 0;
-      for (const s of list){
-        for (let q = 0; q <= SEG; q++){
-          const f = q / SEG, rr = (s.r - s.l * f) * R, aa = s.a + s.l * f * 2.6;
-          vbuf[np++] = cx + Math.cos(aa) * rr;
-          vbuf[np++] = cy + Math.sin(aa) * rr;
-        }
-      }
-      for (let c = 0; c < 3; c++){
-        const off = c === 0 ? d : c === 1 ? -d : 0;
-        ctx.strokeStyle = c === 0 ? `rgba(255,46,88,${br.toFixed(3)})`
-                        : c === 1 ? `rgba(58,168,255,${br.toFixed(3)})`
-                        :           `rgba(255,236,246,${(br * .8).toFixed(3)})`;
-        ctx.beginPath();
-        for (let i = 0; i < np; i += STRIDE){
-          ctx.moveTo(vbuf[i] + off, vbuf[i + 1]);
-          for (let q = 1; q <= SEG; q++) ctx.lineTo(vbuf[i + q * 2] + off, vbuf[i + q * 2 + 1]);
-        }
-        ctx.stroke();
-      }
-    }
-    const core = clamp(seg(t, W_T[3], W_T[4]));
-    const cr = Math.max(W, H) * (.05 + core * core * .34);
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr);
-    g.addColorStop(0,   `rgba(255,255,255,${(.70 * a).toFixed(3)})`);
-    g.addColorStop(.30, `rgba(255,226,240,${(.28 * a).toFixed(3)})`);
-    g.addColorStop(1,   'rgba(255,200,230,0)');
-    /* only the glow's own box, not the whole screen — a full-frame additive
-       gradient every frame is the single most expensive thing here */
-    ctx.fillStyle = g;
-    const gx = Math.max(0, cx - cr), gy = Math.max(0, cy - cr);
-    ctx.fillRect(gx, gy, Math.min(W, cx + cr) - gx, Math.min(H, cy + cr) - gy);
-    ctx.globalCompositeOperation = 'source-over';
-  }
-
-  /* 5 — out the other side, the blowout falling away onto the page */
-  function drawArrive(t, a){
-    const b = (1 - clamp(seg(t, W_T[4] - 160, W_T[4] + 300))) * a;
-    if (b <= .01) return;
-    ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .9);
-    g.addColorStop(0, `rgba(255,255,255,${(.9 * b).toFixed(3)})`);
-    g.addColorStop(1, 'rgba(255,240,225,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'source-over';
-  }
-
-  function drawWorld(i, t, a, speed){
-    if (a <= .01) return;
-    if      (i === 0) drawVoid(t, a, speed);
-    else if (i === 1) drawShaft(a, PAL_SHAFT, 0);
-    else if (i === 2){ drawShaft(a, PAL_GLITCH, 2.5); glitchPass(a); }
-    else if (i === 3) drawVortex(t, a);
-    else              drawArrive(t, a);
-  }
 
   /* the body's shading, interpolated: bright line → lit sphere → the tab's pill */
   function shadowOf(k, d, up){
     const n = (1 - d) * up;
     return `inset 0 -7px 14px rgba(84,26,9,${(.5 * k * n).toFixed(3)}),` +
            `inset 0 3px 9px rgba(255,238,220,${(.5 * k * n).toFixed(3)}),` +
-           `0 0 ${lerp(18, 24, k).toFixed(1)}px rgba(236,152,112,${(lerp(.85, .7, k) * n).toFixed(3)}),` +
-           `0 0 ${lerp(46, 86, k).toFixed(1)}px rgba(217,119,87,${(lerp(.45, .33, k) * n).toFixed(3)}),` +
+           `0 0 ${lerp(16, 22, k).toFixed(1)}px rgba(236,152,112,${(lerp(.40, .32, k) * n).toFixed(3)}),` +
+           `0 0 ${lerp(40, 72, k).toFixed(1)}px rgba(217,119,87,${(lerp(.20, .15, k) * n).toFixed(3)}),` +
            `0 1px 2px rgba(41,38,31,${(.06 * d).toFixed(3)}),` +
            `0 6px 16px -8px rgba(41,38,31,${(.28 * d).toFixed(3)})`;
   }
@@ -2673,21 +2441,8 @@ function runFlight(){
 
     /* ── whichever dimension we are in ── */
     const wv = worldAt(t);
-    const wj = Math.min(wv.i + 1, WORLD_BG.length - 1);
-    if (glr){
-      /* travel, not frames — so the corridor runs at one speed on any display */
-      glDist += speed * dt * 60;
-    } else {
-      const bgA = WORLD_BG[wv.i], bgB = WORLD_BG[wj];
-      /* a partial clear: whatever is left of the last frame IS the motion blur */
-      ctx.globalAlpha = lerp(WORLD_HOLD[wv.i], WORLD_HOLD[wj], wv.k);
-      ctx.fillStyle = `rgb(${lerp(bgA[0],bgB[0],wv.k)|0},${lerp(bgA[1],bgB[1],wv.k)|0},${lerp(bgA[2],bgB[2],wv.k)|0})`;
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1;
-      stepWorlds(speed);
-      drawWorld(wv.i, t, 1 - wv.k, speed);
-      if (wv.k > 0) drawWorld(wj, t, wv.k, speed);
-    }
+    /* travel, not frames — so the corridor runs at one speed on any display */
+    glDist += speed * dt * 60;
 
     /* ── the box: pill → line → body → tab pill ── */
     let bw, bh, bx, by, land = 0;
@@ -2729,7 +2484,7 @@ function runFlight(){
 
     /* the scene is drawn here rather than above so the character's own box can
        light it — the DOM body sits on top either way, so order is free */
-    if (glr) glr.draw({
+    glr.draw({
       t, dist:glDist, speed, w:wv.i, k:wv.k,
       core:  clamp(seg(t, W_T[3], W_T[4])),
       flash: 1 - clamp(seg(t, W_T[4] - 160, W_T[4] + 300)),
@@ -2757,6 +2512,10 @@ function runFlight(){
     const ff = docking ? 1 - smooth(seg(t, T_DOCK, T_DOCK + DOCK_DUR * .5)) : 1;
     const fk = seg(t, T_FEAT_0, T_FEAT_1);
     const vs = fk <= 0 ? 0 : eOut(fk) * (1 + .12 * Math.exp(-5 * fk) * Math.sin(fk * 11));
+    if (visor){
+      visor.style.opacity = (clamp(fk * 2.6) * ff).toFixed(3);
+      visor.style.setProperty('--vis-s', (vs * ff).toFixed(3));
+    }
     eyes.style.opacity = (clamp(fk * 3.2) * ff).toFixed(3);
     eyes.style.transform = `translate(${lagX.toFixed(2)}px,${lagY.toFixed(2)}px) scaleY(${(vs * ff).toFixed(3)})`;
     /* blink on its own: now and then, and sometimes twice in a row */
