@@ -1953,12 +1953,367 @@ function starCol(){
 const PAL_SHAFT  = { line:'150,220,230', frag:'195,246,246', ca:'40,200,210', cb:'120,160,255' };
 const PAL_GLITCH = { line:'120,210,120', frag:'192,255,150', ca:'70,255,120', cb:'232,255,70' };
 
+/* ── the four dimensions, as one fragment shader ─────────────────────────────
+   Canvas 2D could only fake depth by scaling flat shapes by 1/z, which is why
+   the old version read as stacked rectangles rather than architecture. Here the
+   corridor is a real analytic ray/box intersection, so every panel is
+   perspective-correct, and the frame then gets what actually separates a
+   reference like lusion.co from a canvas sketch: a true bloom chain, radial
+   motion blur, chromatic aberration, vignette and grain — on the GPU.
+
+   No library. Raw WebGL, seven fullscreen draws a frame. Returns null if the
+   context or any shader fails, and the canvas 2D renderer below takes over. */
+function makeFlightGL(cv){
+  const opt = { alpha:false, antialias:false, depth:false, stencil:false,
+                premultipliedAlpha:false, preserveDrawingBuffer:false,
+                powerPreference:'high-performance' };
+  let gl = null;
+  try { gl = cv.getContext('webgl', opt) || cv.getContext('experimental-webgl', opt); }
+  catch (e){ gl = null; }
+  if (!gl) return null;
+
+  /* one big triangle instead of a quad — covers clip space with 3 vertices */
+  const VS = `attribute vec2 aPos;varying vec2 vUv;
+void main(){vUv=aPos*.5+.5;gl_Position=vec4(aPos,0.,1.);}`;
+
+  const HASH = `
+float h11(float p){p=fract(p*.1031);p*=p+33.33;p*=p+p;return fract(p);}
+float h21(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+vec2 h22(vec2 p){vec3 q=fract(vec3(p.xyx)*vec3(.1031,.1030,.0973));q+=dot(q,q.yzx+33.33);return fract((q.xx+q.yz)*q.zy);}`;
+
+  const SCENE_FS = `precision highp float;
+uniform vec2 uRes;
+uniform float uT,uDist,uW,uK,uCore,uFlash,uBotA;
+uniform vec3 uBot,uBotC;
+${HASH}
+#define PI 3.14159265
+float gband(float r,float c,float w){float k=(r-c)/w;return exp(-k*k);}
+
+/* 1 — the void. Forward motion is a translation in log(r), so a plain grid in
+   log-polar space gives stars that fly outward and accelerate the way real
+   parallax does, with no per-star loop. */
+vec3 wVoid(vec2 uv){
+  float r=max(length(uv),.0015), a=atan(uv.y,uv.x), lr=log(r);
+  vec3 st=vec3(0.);
+  for(int i=0;i<3;i++){
+    float fi=float(i), cells=34.+fi*15.;
+    vec2 p=vec2(a/(2.*PI)*cells,(lr+uDist*.00052)*cells*.40+fi*11.);
+    vec2 ci=floor(p), cf=fract(p)-.5;
+    float hh=h21(ci+fi*57.);
+    if(hh>.80){
+      vec2 o=(h22(ci+fi*13.)-.5)*.5;
+      float d=length(cf-o);
+      float m=pow(h11(hh*91.),2.2);
+      float tw=.82+.18*sin(uT*.0016+hh*40.);
+      vec3 sc=mix(vec3(.72,.80,1.),vec3(1.,.86,.68),h11(hh*31.));
+      st+=sc*(.00030/(d*d+.00016))*(.25+m)*tw;
+    }
+  }
+  st*=smoothstep(0.,.09,r);
+  vec3 col=vec3(.018,.018,.034)+st;
+  /* wide and faint — a wash behind the dark, not a ring in front of it */
+  col+=vec3(.34,.18,.42)*gband(r,.30,.26)*.13;
+  col+=vec3(.62,.32,.22)*gband(r,.46,.28)*.11;
+  col+=vec3(.18,.40,.56)*gband(r,.64,.32)*.10;
+  return col;
+}
+
+/* 2 & 3 — the shaft. Nearest wall of a rectangular corridor, solved rather
+   than marched: the panels sit ON the wall, so they converge correctly and
+   open past the camera instead of sliding by. acid=1 is the glitch world. */
+vec3 wTunnel(vec2 uv,float acid){
+  vec3 d=normalize(vec3(uv,.80));
+  float HW=.70,HH=.46;
+  float tx=HW/max(abs(d.x),1e-4), ty=HH/max(abs(d.y),1e-4);
+  float xw=tx<ty?1.:0.;
+  vec3 p=d*min(tx,ty);
+  float vz=min(p.z,70.);
+  float wz=vz+uDist*.0115;
+  vec2 suv=xw>.5?vec2(p.y/HH,wz):vec2(p.x/HW,wz);
+  vec2 cell=vec2(suv.x*4.0,suv.y*3.0);
+  vec2 ci=floor(cell), cf=fract(cell), q=abs(cf-.5);
+  float hh=h21(ci+xw*17.3);
+  float lit=step(.70,hh);
+  /* a strip light of random width sitting IN the cell — a lit full cell reads
+     as a checkerboard, a strip reads as a fixture on a wall */
+  float pw=.12+.26*h11(hh*17.);
+  float panel=lit*(1.-smoothstep(pw-.035,pw,q.x))*(1.-smoothstep(.30,.37,q.y));
+  float bri=(.30+.70*h11(hh*77.))*(.84+.16*sin(uT*.004+hh*60.));
+  /* structural ribs: the corridor's own frame, always faintly there */
+  float rib=smoothstep(.46,.5,q.y)*.50+smoothstep(.47,.5,q.x)*.22;
+  /* long-tailed fog, plus a detail fade so the far cells cannot alias */
+  float fog=1./(1.+vz*vz*.055);
+  float det=smoothstep(30.,4.,vz);
+  vec3 pc=mix(vec3(.40,.80,.95),vec3(.56,1.,.46),acid);
+  vec3 bg=mix(vec3(.012,.020,.032),vec3(.008,.028,.014),acid);
+  vec3 col=bg+pc*(panel*bri*1.5+rib*.14)*fog*det;
+  col+=pc*.22*exp(-length(uv)*5.5);
+  return col;
+}
+
+/* 4 — pulled into the core. Logarithmic spirals, which is what a real inward
+   pull looks like: constant in log(r), so the arms tighten as they fall in. */
+vec3 wVortex(vec2 uv){
+  float r=max(length(uv),.0015), a=atan(uv.y,uv.x), lr=log(r);
+  vec3 fil=vec3(0.);
+  for(int i=0;i<3;i++){
+    float fi=float(i);
+    float s=(a/(2.*PI))*(9.+fi*6.)+lr*(2.2+fi*.9)+uDist*(.0024+fi*.0010)+fi*.41;
+    float w=abs(fract(s)-.5)*2.;
+    /* each filament gets its own width and colour, so it reads as debris
+       being drawn in rather than as a painted swirl */
+    float hh=h21(vec2(floor(s),fi*13.+1.));
+    vec3 cc=mix(vec3(1.,.36,.58),vec3(.44,.70,1.),fract(hh*3.1+fi*.33));
+    fil+=cc*pow(1.-w,mix(12.,36.,hh))*(.45+hh*.95);
+  }
+  /* nothing right at the core, where the winding would alias, and nothing
+     past the rim */
+  fil*=smoothstep(.035,.24,r)*smoothstep(1.05,.40,r);
+  vec3 col=vec3(.028,.007,.036)+fil*.42;
+  col+=vec3(1.,.86,.94)*(uCore*.0045/(r*r+.0006));
+  col+=vec3(1.,.97,.99)*uCore*smoothstep(.050,0.,r)*2.0;
+  return col;
+}
+
+/* 5 — out the other side, the blowout falling away onto the page */
+vec3 wArrive(vec2 uv){
+  float r=length(uv);
+  return vec3(.957,.945,.918)+vec3(1.,.94,.86)*uFlash*1.4*exp(-r*r*2.2);
+}
+
+vec3 sceneAt(float w,vec2 uv){
+  if(w<.5) return wVoid(uv);
+  if(w<1.5) return wTunnel(uv,0.);
+  if(w<2.5) return wTunnel(uv,1.);
+  if(w<3.5) return wVortex(uv);
+  return wArrive(uv);
+}
+
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*uRes)/uRes.y;
+  vec3 col=sceneAt(uW,uv);
+  if(uK>0.) col=mix(col,sceneAt(min(uW+1.,4.),uv),uK);
+  /* the character emits into the space, so it is lit by the world instead of
+     sitting on top of it like a sticker */
+  vec2 bp=(uBot.xy-.5*uRes)/uRes.y;
+  float bd=length(uv-bp);
+  col+=uBotC*uBotA*(.0040/(bd*bd+.0045));
+  gl_FragColor=vec4(col,1.);
+}`;
+
+  const BRIGHT_FS = `precision mediump float;varying vec2 vUv;uniform sampler2D uTex;
+void main(){
+  vec3 c=texture2D(uTex,vUv).rgb;
+  float l=max(max(c.r,c.g),c.b);
+  gl_FragColor=vec4(c*smoothstep(.42,.95,l)*1.5,1.);
+}`;
+
+  /* 5-tap gaussian riding bilinear filtering — 9 pixels of reach per pass */
+  const BLUR_FS = `precision mediump float;varying vec2 vUv;
+uniform sampler2D uTex;uniform vec2 uDir;
+void main(){
+  vec3 s=texture2D(uTex,vUv).rgb*.2270270;
+  s+=(texture2D(uTex,vUv+uDir*1.3846153).rgb+texture2D(uTex,vUv-uDir*1.3846153).rgb)*.3162162;
+  s+=(texture2D(uTex,vUv+uDir*3.2307692).rgb+texture2D(uTex,vUv-uDir*3.2307692).rgb)*.0702702;
+  gl_FragColor=vec4(s,1.);
+}`;
+
+  /* the post chain, in one pass: datamosh displacement, radial motion blur
+     with the channels split across it, bloom, vignette, filmic roll-off, grain */
+  const COMP_FS = `precision highp float;varying vec2 vUv;
+uniform sampler2D uScene,uBloom;
+uniform vec2 uRes;
+uniform float uBlur,uCA,uBloomA,uVig,uGrain,uMosh,uT;
+${HASH}
+void main(){
+  vec2 q=vUv;
+  if(uMosh>0.){
+    float sl=floor(q.y*26.+1.);
+    float hs=h21(vec2(sl,floor(uT*.045)));
+    q.x+=(hs-.5)*uMosh*step(.70,hs);
+  }
+  vec2 ctr=vec2(.5), dir=q-ctr;
+  vec3 acc=vec3(0.);float ws=0.;
+  for(int i=0;i<6;i++){
+    float f=float(i)/5.;
+    float s=1.-f*uBlur, w=1.-f*.55;
+    acc.r+=texture2D(uScene,ctr+dir*(s+uCA*.010)).r*w;
+    acc.g+=texture2D(uScene,ctr+dir*s).g*w;
+    acc.b+=texture2D(uScene,ctr+dir*(s-uCA*.010)).b*w;
+    ws+=w;
+  }
+  vec3 col=acc/ws;
+  col+=texture2D(uBloom,q).rgb*uBloomA;
+  col*=1.-uVig*dot(dir,dir)*1.9;
+  col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);
+  col+=(h21(vUv*uRes+fract(uT*.001)*vec2(31.,17.))-.5)*uGrain;
+  gl_FragColor=vec4(max(col,0.),1.);
+}`;
+
+  function sh(type, src){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+  }
+  function prog(fs){
+    const v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, fs);
+    if (!v || !f) return null;
+    const p = gl.createProgram();
+    gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return null;
+    const u = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++){
+      const nm = gl.getActiveUniform(p, i).name;
+      u[nm] = gl.getUniformLocation(p, nm);
+    }
+    return { p, u, a: gl.getAttribLocation(p, 'aPos') };
+  }
+  const pScene = prog(SCENE_FS), pBright = prog(BRIGHT_FS),
+        pBlur  = prog(BLUR_FS),  pComp   = prog(COMP_FS);
+  if (!pScene || !pBright || !pBlur || !pComp) return null;
+
+  const vb = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+
+  function mkFbo(){
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const f = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    return { t, f, w:0, h:0 };
+  }
+  function sizeFbo(o, w, h){
+    if (o.w === w && o.h === h) return;
+    o.w = w; o.h = h;
+    gl.bindTexture(gl.TEXTURE_2D, o.t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  }
+  const fScene = mkFbo(), fA = mkFbo(), fB = mkFbo();
+
+  let W = 0, H = 0, SW = 0, SH = 0, BW = 0, BH = 0, dead = false;
+  cv.addEventListener('webglcontextlost', e => { e.preventDefault(); dead = true; });
+
+  function resize(){
+    W = window.innerWidth; H = window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, W < 600 ? 1.5 : 2);
+    /* The composite does 18 texture fetches per pixel, so cost scales with the
+       backing store, not the display. Cap it: on a large retina screen the
+       buffer is scaled down and stretched back by CSS, which is invisible
+       under this much bloom and motion blur but keeps a weak GPU at 60fps. */
+    let sw = W * dpr, sh = H * dpr;
+    const sc = Math.sqrt(2600000 / Math.max(1, sw * sh));
+    if (sc < 1){ sw *= sc; sh *= sc; }
+    SW = Math.max(2, Math.round(sw)); SH = Math.max(2, Math.round(sh));
+    cv.width = SW; cv.height = SH;
+    BW = Math.max(2, SW >> 2); BH = Math.max(2, SH >> 2);
+    sizeFbo(fScene, SW, SH); sizeFbo(fA, BW, BH); sizeFbo(fB, BW, BH);
+  }
+  resize();
+  /* now that the attachments have a size, the targets can actually be checked */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fScene.f);
+  if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) return null;
+
+  function begin(pr, fbo, w, h){
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.viewport(0, 0, w, h);
+    gl.useProgram(pr.p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+    gl.enableVertexAttribArray(pr.a);
+    gl.vertexAttribPointer(pr.a, 2, gl.FLOAT, false, 0, 0);
+  }
+  const tri = () => gl.drawArrays(gl.TRIANGLES, 0, 3);
+  function bindTex(loc, tex, unit){
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform1i(loc, unit);
+  }
+
+  /* per-world grade. Blur and aberration ride the speed curve on top of this. */
+  const POST = [
+    { blur:.030, ca:.22, bloom:1.05, vig:.50, grain:.045, mosh:0,    tint:[1.00,.62,.36] },
+    { blur:.085, ca:.45, bloom:1.25, vig:.55, grain:.040, mosh:0,    tint:[.42,.86,1.00] },
+    { blur:.095, ca:1.30, bloom:1.30, vig:.58, grain:.075, mosh:.055, tint:[.55,1.00,.50] },
+    { blur:.150, ca:.80, bloom:1.45, vig:.42, grain:.050, mosh:0,    tint:[1.00,.52,.72] },
+    { blur:.020, ca:.10, bloom:.85, vig:.16, grain:.020, mosh:0,    tint:[1.00,.95,.88] }
+  ];
+  const mixPost = (a, b, k) => ({
+    blur:  a.blur  + (b.blur  - a.blur ) * k,
+    ca:    a.ca    + (b.ca    - a.ca   ) * k,
+    bloom: a.bloom + (b.bloom - a.bloom) * k,
+    vig:   a.vig   + (b.vig   - a.vig  ) * k,
+    grain: a.grain + (b.grain - a.grain) * k,
+    mosh:  a.mosh  + (b.mosh  - a.mosh ) * k,
+    tint:  a.tint.map((v, i) => v + (b.tint[i] - v) * k)
+  });
+
+  function draw(o){
+    if (dead) return;
+    const g0 = POST[Math.min(o.w, 4)], g1 = POST[Math.min(o.w + 1, 4)];
+    const gr = o.k > 0 ? mixPost(g0, g1, o.k) : g0;
+    const sk = Math.max(.25, Math.min(1.4, o.speed / 26));
+
+    /* 1 — the scene itself */
+    const u = pScene.u;
+    begin(pScene, fScene.f, SW, SH);
+    gl.uniform2f(u.uRes, SW, SH);
+    gl.uniform1f(u.uT, o.t);
+    gl.uniform1f(u.uDist, o.dist);
+    gl.uniform1f(u.uW, o.w);
+    gl.uniform1f(u.uK, o.k);
+    gl.uniform1f(u.uCore, o.core);
+    gl.uniform1f(u.uFlash, o.flash);
+    gl.uniform1f(u.uBotA, o.botA);
+    /* CSS y is top-down, gl_FragCoord is bottom-up */
+    gl.uniform3f(u.uBot, o.botX * SW / W, (H - o.botY) * SH / H, o.botR);
+    gl.uniform3f(u.uBotC, gr.tint[0], gr.tint[1], gr.tint[2]);
+    tri();
+
+    /* 2 — bright pass, straight into quarter res */
+    begin(pBright, fA.f, BW, BH);
+    bindTex(pBright.u.uTex, fScene.t, 0);
+    tri();
+
+    /* 3 — two separable blur round trips, the second twice as wide */
+    const bl = (src, dst, dx, dy) => {
+      begin(pBlur, dst.f, BW, BH);
+      bindTex(pBlur.u.uTex, src.t, 0);
+      gl.uniform2f(pBlur.u.uDir, dx, dy);
+      tri();
+    };
+    bl(fA, fB, 1 / BW, 0); bl(fB, fA, 0, 1 / BH);
+    bl(fA, fB, 2 / BW, 0); bl(fB, fA, 0, 2 / BH);
+
+    /* 4 — composite to the canvas */
+    const c = pComp.u;
+    begin(pComp, null, SW, SH);
+    bindTex(c.uScene, fScene.t, 0);
+    bindTex(c.uBloom, fA.t, 1);
+    gl.uniform2f(c.uRes, SW, SH);
+    gl.uniform1f(c.uBlur, gr.blur * sk);
+    gl.uniform1f(c.uCA, gr.ca * sk);
+    gl.uniform1f(c.uBloomA, gr.bloom);
+    gl.uniform1f(c.uVig, gr.vig);
+    gl.uniform1f(c.uGrain, gr.grain);
+    gl.uniform1f(c.uMosh, gr.mosh);
+    gl.uniform1f(c.uT, o.t);
+    tri();
+  }
+
+  return { resize, draw };
+}
+
 function runFlight(){
   const enterEl = document.getElementById('enter');
   const go      = document.getElementById('enterGo');
   const flight  = document.getElementById('flight');
   const bodyEl  = document.getElementById('bot');
-  const cv      = document.getElementById('flightCanvas');
+  let   cv      = document.getElementById('flightCanvas');
   const skip    = document.getElementById('flightSkip');
   if (!flight || !bodyEl || !cv || !enterEl || !go){ closeCover(startSite); return; }
   if (flight.dataset.on) return;
@@ -1997,10 +2352,20 @@ function runFlight(){
   enterEl.classList.add('is-out');
 
   /* ── canvas ── */
-  const ctx = cv.getContext('2d');
+  /* shaders if WebGL is there, the canvas 2D renderer below if it is not */
+  const glr = makeFlightGL(cv);
+  if (!glr){
+    /* getContext('webgl') is sticky: a failed attempt leaves the element unable
+       to hand out a 2D context, so the fallback gets a fresh canvas */
+    const fresh = cv.cloneNode(false);
+    cv.parentNode.replaceChild(fresh, cv);
+    cv = fresh;
+  }
+  const ctx = glr ? null : cv.getContext('2d');
   let dpr = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0, cx = 0, cy = 0;
   const size = () => {
     W = window.innerWidth; H = window.innerHeight; cx = W / 2; cy = H / 2;
+    if (glr){ glr.resize(); return; }
     cv.width = W * dpr; cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
@@ -2296,7 +2661,7 @@ function runFlight(){
   let px = 0, py = 0, vx = 0, vy = 0, jig = 0, jigV = 0;
   let lagX = 0, lagY = 0, prevT = 0, stretch = 0;
   let blinkAt = -1e9, nextBlink = T_FEAT_1 + 280, dblBlink = 0;
-  let lastVis = null, dockFrom = null, dockTo = null;
+  let lastVis = null, dockFrom = null, dockTo = null, glDist = 0;
   let revealed = false, hinted = false;
   const t0 = performance.now();
 
@@ -2309,15 +2674,20 @@ function runFlight(){
     /* ── whichever dimension we are in ── */
     const wv = worldAt(t);
     const wj = Math.min(wv.i + 1, WORLD_BG.length - 1);
-    const bgA = WORLD_BG[wv.i], bgB = WORLD_BG[wj];
-    /* a partial clear: whatever is left of the last frame IS the motion blur */
-    ctx.globalAlpha = lerp(WORLD_HOLD[wv.i], WORLD_HOLD[wj], wv.k);
-    ctx.fillStyle = `rgb(${lerp(bgA[0],bgB[0],wv.k)|0},${lerp(bgA[1],bgB[1],wv.k)|0},${lerp(bgA[2],bgB[2],wv.k)|0})`;
-    ctx.fillRect(0, 0, W, H);
-    ctx.globalAlpha = 1;
-    stepWorlds(speed);
-    drawWorld(wv.i, t, 1 - wv.k, speed);
-    if (wv.k > 0) drawWorld(wj, t, wv.k, speed);
+    if (glr){
+      /* travel, not frames — so the corridor runs at one speed on any display */
+      glDist += speed * dt * 60;
+    } else {
+      const bgA = WORLD_BG[wv.i], bgB = WORLD_BG[wj];
+      /* a partial clear: whatever is left of the last frame IS the motion blur */
+      ctx.globalAlpha = lerp(WORLD_HOLD[wv.i], WORLD_HOLD[wj], wv.k);
+      ctx.fillStyle = `rgb(${lerp(bgA[0],bgB[0],wv.k)|0},${lerp(bgA[1],bgB[1],wv.k)|0},${lerp(bgA[2],bgB[2],wv.k)|0})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+      stepWorlds(speed);
+      drawWorld(wv.i, t, 1 - wv.k, speed);
+      if (wv.k > 0) drawWorld(wj, t, wv.k, speed);
+    }
 
     /* ── the box: pill → line → body → tab pill ── */
     let bw, bh, bx, by, land = 0;
@@ -2356,6 +2726,16 @@ function runFlight(){
     bodyEl.style.top = by.toFixed(2) + 'px';
     bodyEl.style.width = bw.toFixed(2) + 'px';
     bodyEl.style.height = bh.toFixed(2) + 'px';
+
+    /* the scene is drawn here rather than above so the character's own box can
+       light it — the DOM body sits on top either way, so order is free */
+    if (glr) glr.draw({
+      t, dist:glDist, speed, w:wv.i, k:wv.k,
+      core:  clamp(seg(t, W_T[3], W_T[4])),
+      flash: 1 - clamp(seg(t, W_T[4] - 160, W_T[4] + 300)),
+      botX:  bx + bw / 2 + px, botY: by + bh / 2 + py, botR: Math.max(bw, bh) / 2,
+      botA:  clamp(seg(t, T_FEAT_0, T_FEAT_1)) * (1 - clamp(seg(t, T_SITE - 300, T_SITE)))
+    });
 
     /* ── the fill, one gradient the whole way ── */
     const fillA = seg(t, T_SQ_0, T_SQ_1 * .92);
